@@ -1245,10 +1245,27 @@ const instruction* opx_beginblock(const instruction* instr, execution_state& sta
 #undef LIMB_BITS
 #undef LIMB_BITS_OVERFLOW
 
+/*
 void logU384(uint8_t*num) {
     std::cout << std::hex;
 
-    for(auto i = 0; i < 48; i++) {
+    for (auto i = 0; i < 6; i++) {
+        for(auto i = 0; i < 48; i++) {
+            std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(*(num + i));
+        }
+    }
+
+    std::cout << std::dec << std::endl;
+}
+*/
+
+void logU384(uint8_t*num) {
+    std::cout << std::hex;
+
+    //for(auto i = 0; i < 48; i++) { // for big endian
+
+    // for little endian
+    for(auto i = 47; i >= 0; i--) { 
         std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(*(num + i));
     }
 
@@ -1320,6 +1337,9 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     logU384(reinterpret_cast<uint8_t*>(x));
     std::cout << "y = ";
     logU384(reinterpret_cast<uint8_t*>(y));
+    std::cout << "r_inv = " << intx::to_string(inv, 16) << std::endl;
+    std::cout << "modulus = ";
+    logU384(reinterpret_cast<uint8_t*>(m));
 
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(x),
