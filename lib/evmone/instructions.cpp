@@ -5,6 +5,9 @@
 #include "analysis.hpp"
 #include <ethash/keccak.hpp>
 
+#include <iostream>
+#include <iomanip>
+
 namespace evmone
 {
 namespace
@@ -1242,6 +1245,16 @@ const instruction* opx_beginblock(const instruction* instr, execution_state& sta
 #undef LIMB_BITS
 #undef LIMB_BITS_OVERFLOW
 
+void logU384(uint8_t*num) {
+    std::cout << std::hex;
+
+    for(auto i = 0; i < 48; i++) {
+        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(*(num + i));
+    }
+
+    std::cout << std::dec << std::endl;
+}
+
 const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
 {
     const auto x_offset = state.stack.pop();
@@ -1257,6 +1270,11 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(m_offset)];
 
+    std::cout << "op_addmodmont384\nx = ";
+    logU384(reinterpret_cast<uint8_t*>(x));
+    std::cout << "y = ";
+    logU384(reinterpret_cast<uint8_t*>(y));
+
     addmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(x),
@@ -1264,31 +1282,18 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
         reinterpret_cast<uint64_t*>(m)
     );
 
+    std::cout << "result = ";
+    logU384(reinterpret_cast<uint8_t*>(x));
+
+
     return ++instr;
 }
 
 const instruction* op_submod384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto x_offset = state.stack.pop();
-    const auto y_offset = state.stack.pop();
-    const auto m_offset = state.stack.pop();
+    // TODO: implement
 
-    const auto max_memory_index = std::max(std::max(x_offset, y_offset), m_offset);
-
-    if (!check_memory(state, max_memory_index, 48))
-         return nullptr;
-
-    const auto x = &state.memory[static_cast<size_t>(x_offset)];
-    const auto y = &state.memory[static_cast<size_t>(y_offset)];
-    const auto m = &state.memory[static_cast<size_t>(m_offset)];
-
-    subtractmod384_64bitlimbs(
-        reinterpret_cast<uint64_t*>(x),
-        reinterpret_cast<uint64_t*>(x),
-        reinterpret_cast<uint64_t*>(y),
-        reinterpret_cast<uint64_t*>(m)
-    );
-
+    (void)state;
     return ++instr;
 }
 
@@ -1311,6 +1316,11 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(m_offset)];
 
+    std::cout << "op_mulmodmont384\nx = ";
+    logU384(reinterpret_cast<uint8_t*>(x));
+    std::cout << "y = ";
+    logU384(reinterpret_cast<uint8_t*>(y));
+
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(x),
@@ -1318,6 +1328,9 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
         reinterpret_cast<uint64_t*>(m),
         static_cast<uint64_t>(inv)
     );
+
+    std::cout << "result = ";
+    logU384(reinterpret_cast<uint8_t*>(x));
 
     return ++instr;
 }
