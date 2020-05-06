@@ -1287,9 +1287,9 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(m_offset)];
 
-    std::cout << "op_addmodmont384\nx = ";
+    std::cout << "op_addmodmont384\n  x = ";
     logU384(reinterpret_cast<uint8_t*>(x));
-    std::cout << "y = ";
+    std::cout << "  y = ";
     logU384(reinterpret_cast<uint8_t*>(y));
 
     addmod384_64bitlimbs(
@@ -1299,7 +1299,7 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
         reinterpret_cast<uint64_t*>(m)
     );
 
-    std::cout << "result = ";
+    std::cout << "  result = ";
     logU384(reinterpret_cast<uint8_t*>(x));
 
 
@@ -1310,7 +1310,26 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
 {
     // TODO: implement
 
-    (void)state;
+    const auto x_offset = state.stack.pop();
+    const auto y_offset = state.stack.pop();
+    const auto m_offset = state.stack.pop();
+
+    const auto max_memory_index = std::max(std::max(x_offset, y_offset), m_offset);
+
+    if (!check_memory(state, max_memory_index, 48))
+         return nullptr;
+
+    const auto x = &state.memory[static_cast<size_t>(x_offset)];
+    const auto y = &state.memory[static_cast<size_t>(y_offset)];
+    const auto m = &state.memory[static_cast<size_t>(m_offset)];
+
+    subtractmod384_64bitlimbs(
+        reinterpret_cast<uint64_t*>(x),
+        reinterpret_cast<uint64_t*>(x),
+        reinterpret_cast<uint64_t*>(y),
+        reinterpret_cast<uint64_t*>(m));
+
+    //(void)state;
     return ++instr;
 }
 
