@@ -5,6 +5,9 @@
 #include "analysis.hpp"
 #include <ethash/keccak.hpp>
 
+#include <iostream>
+#include <iomanip>
+
 namespace evmone
 {
 namespace
@@ -19,6 +22,19 @@ constexpr auto word_size = 32;
 constexpr int64_t num_words(uint64_t size_in_bytes) noexcept
 {
     return (static_cast<int64_t>(size_in_bytes) + (word_size - 1)) / word_size;
+}
+
+void logU384(uint8_t*num) {
+    std::cout << std::hex;
+
+    //for(auto i = 0; i < 48; i++) { // for big endian
+
+    // for little endian
+    for(auto i = 47; i >= 0; i--) {
+        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(*(num + i));
+    }
+
+    std::cout << std::dec << std::endl;
 }
 
 inline bool check_memory(execution_state& state, const uint256& offset, uint64_t size) noexcept
@@ -1259,12 +1275,20 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(m_offset)];
 
+    std::cout << "op_addmod384\n  x = ";
+    logU384(reinterpret_cast<uint8_t*>(x));
+    std::cout << "  y = ";
+    logU384(reinterpret_cast<uint8_t*>(y));
+
     addmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
         reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(y),
         reinterpret_cast<uint64_t*>(m)
     );
+
+    std::cout << "  result = ";
+    logU384(reinterpret_cast<uint8_t*>(x));
 
     return ++instr;
 }
@@ -1317,6 +1341,14 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(m_offset)];
 
+    std::cout << "op_mulmodmont384\nx = ";
+    logU384(reinterpret_cast<uint8_t*>(x));
+    std::cout << "y = ";
+    logU384(reinterpret_cast<uint8_t*>(y));
+    std::cout << "r_inv = " << intx::to_string(inv, 16) << std::endl;
+    std::cout << "modulus = ";
+    logU384(reinterpret_cast<uint8_t*>(m));
+
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
         reinterpret_cast<uint64_t*>(x),
@@ -1324,6 +1356,8 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
         reinterpret_cast<uint64_t*>(m),
         static_cast<uint64_t>(inv)
     );
+    std::cout << "result = ";
+    logU384(reinterpret_cast<uint8_t*>(x));
 
     return ++instr;
 }
