@@ -1288,7 +1288,7 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     );
 
     std::cout << "  result = ";
-    logU384(reinterpret_cast<uint8_t*>(x));
+    logU384(reinterpret_cast<uint8_t*>(out));
 
     return ++instr;
 }
@@ -1310,12 +1310,20 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(m_offset)];
 
+    std::cout << "op_submod384\n  x = ";
+    logU384(reinterpret_cast<uint8_t*>(x));
+    std::cout << "  y = ";
+    logU384(reinterpret_cast<uint8_t*>(y));
+
     subtractmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
         reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(y),
         reinterpret_cast<uint64_t*>(m)
     );
+
+    std::cout << "  result = ";
+    logU384(reinterpret_cast<uint8_t*>(out));
 
     return ++instr;
 }
@@ -1341,12 +1349,12 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(m_offset)];
 
-    std::cout << "op_mulmodmont384\nx = ";
+    std::cout << "op_mulmodmont384\n  x = ";
     logU384(reinterpret_cast<uint8_t*>(x));
-    std::cout << "y = ";
+    std::cout << "  y = ";
     logU384(reinterpret_cast<uint8_t*>(y));
-    std::cout << "r_inv = " << intx::to_string(inv, 16) << std::endl;
-    std::cout << "modulus = ";
+    std::cout << "  r_inv = " << intx::to_string(inv, 16) << std::endl;
+    std::cout << "  modulus = ";
     logU384(reinterpret_cast<uint8_t*>(m));
 
     montmul384_64bitlimbs(
@@ -1356,8 +1364,8 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
         reinterpret_cast<uint64_t*>(m),
         static_cast<uint64_t>(inv)
     );
-    std::cout << "result = ";
-    logU384(reinterpret_cast<uint8_t*>(x));
+    std::cout << "  result = ";
+    logU384(reinterpret_cast<uint8_t*>(out));
 
     return ++instr;
 }
