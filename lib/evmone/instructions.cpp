@@ -1247,13 +1247,13 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     const auto x_offset = params[1];
     const auto y_offset = params[2];
 
+    if (!check_memory(state, 12288, 48))
+        return nullptr;
+
     const auto out = &state.memory[static_cast<size_t>(out_offset) * 48];
     const auto x = &state.memory[static_cast<size_t>(x_offset) * 48];
     const auto y = &state.memory[static_cast<size_t>(y_offset) * 48];
     const auto m = &state.memory[12288];
-
-    if (!check_memory(state, 12288, 48))
-        return nullptr;
 
     addmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
@@ -1272,13 +1272,13 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
     const auto x_offset = params[1];
     const auto y_offset = params[2];
 
+    if (!check_memory(state, 12288, 48))
+        return nullptr;
+
     const auto out = &state.memory[static_cast<size_t>(out_offset) * 48];
     const auto x = &state.memory[static_cast<size_t>(x_offset) * 48];
     const auto y = &state.memory[static_cast<size_t>(y_offset) * 48];
     const auto m = &state.memory[12288];
-
-    if (!check_memory(state, 12288, 48))
-        return nullptr;
 
     subtractmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
@@ -1297,14 +1297,14 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto x_offset = params[1];
     const auto y_offset = params[2];
 
+    if (!check_memory(state, 12336, 8))
+        return nullptr;
+
     const auto out = &state.memory[static_cast<size_t>(out_offset) * 48];
     const auto x = &state.memory[static_cast<size_t>(x_offset) * 48];
     const auto y = &state.memory[static_cast<size_t>(y_offset) * 48];
     const auto m = &state.memory[12288];
     const uint64_t *inv = reinterpret_cast<uint64_t *>(state.memory[12336]);
-
-    if (!check_memory(state, 12336, 48))
-        return nullptr;
 
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
