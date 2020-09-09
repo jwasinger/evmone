@@ -1303,8 +1303,8 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto out = &state.memory[static_cast<uint8_t>(out_offset) * 48];
     const auto x = &state.memory[static_cast<uint8_t>(x_offset) * 48];
     const auto y = &state.memory[static_cast<uint8_t>(y_offset) * 48];
-    const auto m = &state.memory[(uint8_t)12288];
-    const uint64_t *inv = reinterpret_cast<uint64_t *>(&state.memory[(uint8_t)12336]);
+    const auto m = &state.memory[12288];
+    const uint64_t *inv = reinterpret_cast<uint64_t *>(&state.memory[12336]);
 
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
