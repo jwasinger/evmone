@@ -1300,11 +1300,11 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     if (!check_memory(state, 12336, 8))
         return nullptr;
 
-    const auto out = &state.memory[static_cast<size_t>(out_offset) * 48];
-    const auto x = &state.memory[static_cast<size_t>(x_offset) * 48];
-    const auto y = &state.memory[static_cast<size_t>(y_offset) * 48];
-    const auto m = &state.memory[12288];
-    const uint64_t *inv = reinterpret_cast<uint64_t *>(state.memory[12336]);
+    const auto out = &state.memory[static_cast<uint8_t>(out_offset) * 48];
+    const auto x = &state.memory[static_cast<uint8_t>(x_offset) * 48];
+    const auto y = &state.memory[static_cast<uint8_t>(y_offset) * 48];
+    const auto m = &state.memory[(uint8_t)12288];
+    const uint64_t *inv = reinterpret_cast<uint64_t *>(&state.memory[(uint8_t)12336]);
 
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
@@ -1486,9 +1486,9 @@ constexpr op_table create_op_table_istanbul() noexcept
     table[OP_SELFBALANCE] = {op_selfbalance, 5, 0, 1};
     table[OP_SLOAD] = {op_sload, 800, 1, 0};
 
-    table[0xc0] = {op_addmod384, 8, 4, -4};
-    table[0xc1] = {op_submod384, 8, 4, -4};
-    table[0xc2] = {op_mulmodmont384, 24, 5, -5};
+    table[0xc0] = {op_addmod384, 8, 1, -1};
+    table[0xc1] = {op_submod384, 8, 1, -1};
+    table[0xc2] = {op_mulmodmont384, 24, 1, -1};
     return table;
 }
 
