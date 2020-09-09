@@ -1243,9 +1243,9 @@ const instruction* opx_beginblock(const instruction* instr, execution_state& sta
 const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
 {
     const auto params = intx::as_bytes(state.stack.pop());
-    const auto out_offset = params[0];
+    const auto out_offset = params[2];
     const auto x_offset = params[1];
-    const auto y_offset = params[2];
+    const auto y_offset = params[0];
 
     if (!check_memory(state, 12288, 48))
         return nullptr;
@@ -1268,9 +1268,9 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
 const instruction* op_submod384(const instruction* instr, execution_state& state) noexcept
 {
     const auto params = intx::as_bytes(state.stack.pop());
-    const auto out_offset = params[0];
+    const auto out_offset = params[2];
     const auto x_offset = params[1];
-    const auto y_offset = params[2];
+    const auto y_offset = params[0];
 
     if (!check_memory(state, 12288, 48))
         return nullptr;
@@ -1292,10 +1292,11 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
 
 const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto params = intx::as_bytes(state.stack.pop());
-    const auto out_offset = params[0];
+    const auto v = state.stack.pop();
+    const auto params = intx::as_bytes(v);
+    const auto out_offset = params[2];
     const auto x_offset = params[1];
-    const auto y_offset = params[2];
+    const auto y_offset = params[0];
 
     if (!check_memory(state, 12336, 8))
         return nullptr;
