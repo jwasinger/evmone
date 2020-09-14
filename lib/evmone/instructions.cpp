@@ -1304,9 +1304,8 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto x_offset = reinterpret_cast<const uint32_t*>(&params[4]);
     const auto y_offset = reinterpret_cast<const uint32_t*>(&params[8]);
     const auto mod_offset = reinterpret_cast<const uint32_t*>(&params[12]);
-    const auto inv_offset = reinterpret_cast<const uint32_t*>(&params[16]);
 
-    const auto max_memory_index = std::max(std::max(std::max(*x_offset, *y_offset), std::max(*out_offset, *mod_offset)), *inv_offset);
+    const auto max_memory_index = std::max(std::max(std::max(*x_offset, *y_offset), std::max(*out_offset, *(mod_offset)), *(mod_offset + 1));
 
     if (!check_memory(state, max_memory_index, 48))
          return nullptr;
@@ -1315,7 +1314,7 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto x = &state.memory[static_cast<size_t>(*x_offset)];
     const auto y = &state.memory[static_cast<size_t>(*y_offset)];
     const auto m = &state.memory[static_cast<size_t>(*mod_offset)];
-    const uint64_t *inv = reinterpret_cast<const uint64_t*>(&state.memory[*inv_offset]);
+    const uint64_t *inv = reinterpret_cast<const uint64_t*>(&state.memory[*(mod_offset + 1)]);
 
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
