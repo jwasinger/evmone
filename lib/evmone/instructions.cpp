@@ -1243,17 +1243,21 @@ const instruction* opx_beginblock(const instruction* instr, execution_state& sta
 const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
 {
     const auto params = intx::as_bytes(state.stack.pop());
-    const auto out_offset = params[2];
-    const auto x_offset = params[1];
-    const auto y_offset = params[0];
 
-    if (!check_memory(state, 12288, 48))
-        return nullptr;
+    const auto out_offset = reinterpret_cast<const uint32_t*>(&params[0]);
+    const auto x_offset = reinterpret_cast<const uint32_t*>(&params[4]);
+    const auto y_offset = reinterpret_cast<const uint32_t*>(&params[8]);
+    const auto mod_offset = reinterpret_cast<const uint32_t*>(&params[12]);
 
-    const auto out = &state.memory[static_cast<size_t>(out_offset) * 48];
-    const auto x = &state.memory[static_cast<size_t>(x_offset) * 48];
-    const auto y = &state.memory[static_cast<size_t>(y_offset) * 48];
-    const auto m = &state.memory[12288];
+    const auto max_memory_index = std::max(std::max(*x_offset, *y_offset), std::max(*out_offset, *mod_offset));
+
+    if (!check_memory(state, max_memory_index, 48))
+         return nullptr;
+
+    const auto out = &state.memory[static_cast<size_t>(*out_offset)];
+    const auto x = &state.memory[static_cast<size_t>(*x_offset)];
+    const auto y = &state.memory[static_cast<size_t>(*y_offset)];
+    const auto m = &state.memory[static_cast<size_t>(*mod_offset)];
 
     addmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
@@ -1268,17 +1272,20 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
 const instruction* op_submod384(const instruction* instr, execution_state& state) noexcept
 {
     const auto params = intx::as_bytes(state.stack.pop());
-    const auto out_offset = params[2];
-    const auto x_offset = params[1];
-    const auto y_offset = params[0];
+    const auto out_offset = reinterpret_cast<const uint32_t*>(&params[0]);
+    const auto x_offset = reinterpret_cast<const uint32_t*>(&params[4]);
+    const auto y_offset = reinterpret_cast<const uint32_t*>(&params[8]);
+    const auto mod_offset = reinterpret_cast<const uint32_t*>(&params[12]);
 
-    if (!check_memory(state, 12288, 48))
-        return nullptr;
+    const auto max_memory_index = std::max(std::max(*x_offset, *y_offset), std::max(*out_offset, *mod_offset));
 
-    const auto out = &state.memory[static_cast<size_t>(out_offset) * 48];
-    const auto x = &state.memory[static_cast<size_t>(x_offset) * 48];
-    const auto y = &state.memory[static_cast<size_t>(y_offset) * 48];
-    const auto m = &state.memory[12288];
+    if (!check_memory(state, max_memory_index, 48))
+         return nullptr;
+
+    const auto out = &state.memory[static_cast<size_t>(*out_offset)];
+    const auto x = &state.memory[static_cast<size_t>(*x_offset)];
+    const auto y = &state.memory[static_cast<size_t>(*y_offset)];
+    const auto m = &state.memory[static_cast<size_t>(*mod_offset)];
 
     subtractmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
@@ -1292,20 +1299,23 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
 
 const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto v = state.stack.pop();
-    const auto params = intx::as_bytes(v);
-    const auto out_offset = params[2];
-    const auto x_offset = params[1];
-    const auto y_offset = params[0];
+    const auto params = intx::as_bytes(state.stack.pop());
+    const auto out_offset = reinterpret_cast<const uint32_t*>(&params[0]);
+    const auto x_offset = reinterpret_cast<const uint32_t*>(&params[4]);
+    const auto y_offset = reinterpret_cast<const uint32_t*>(&params[8]);
+    const auto mod_offset = reinterpret_cast<const uint32_t*>(&params[12]);
+    const auto inv_offset = reinterpret_cast<const uint32_t*>(&params[16]);
 
-    if (!check_memory(state, 12336, 8))
-        return nullptr;
+    const auto max_memory_index = std::max(std::max(std::max(*x_offset, *y_offset), std::max(*out_offset, *mod_offset)), *inv_offset);
 
-    const auto out = &state.memory[static_cast<uint8_t>(out_offset) * 48];
-    const auto x = &state.memory[static_cast<uint8_t>(x_offset) * 48];
-    const auto y = &state.memory[static_cast<uint8_t>(y_offset) * 48];
-    const auto m = &state.memory[12288];
-    const uint64_t *inv = reinterpret_cast<uint64_t *>(&state.memory[12336]);
+    if (!check_memory(state, max_memory_index, 48))
+         return nullptr;
+
+    const auto out = &state.memory[static_cast<size_t>(*out_offset)];
+    const auto x = &state.memory[static_cast<size_t>(*x_offset)];
+    const auto y = &state.memory[static_cast<size_t>(*y_offset)];
+    const auto m = &state.memory[static_cast<size_t>(*mod_offset)];
+    const uint64_t *inv = reinterpret_cast<const uint64_t*>(&state.memory[*inv_offset]);
 
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
