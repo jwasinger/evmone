@@ -4,6 +4,7 @@
 
 #include "analysis.hpp"
 #include <ethash/keccak.hpp>
+#include <iostream>
 
 namespace evmone
 {
@@ -1300,21 +1301,25 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
 const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
 {
     const auto params = intx::as_bytes(state.stack.pop());
-    const auto out_offset = reinterpret_cast<const uint32_t*>(&params[0]);
-    const auto x_offset = reinterpret_cast<const uint32_t*>(&params[4]);
-    const auto y_offset = reinterpret_cast<const uint32_t*>(&params[8]);
-    const auto mod_offset = reinterpret_cast<const uint32_t*>(&params[12]);
+    const auto out_offset = reinterpret_cast<const uint32_t*>(&params[12]);
+    const auto x_offset = reinterpret_cast<const uint32_t*>(&params[8]);
+    const auto y_offset = reinterpret_cast<const uint32_t*>(&params[4]);
+    const auto mod_offset = reinterpret_cast<const uint32_t*>(&params[0]);
 
-    const auto max_memory_index = std::max(std::max(std::max(*x_offset, *y_offset), std::max(*out_offset, *(mod_offset)), *(mod_offset + 1));
+    std::cout << "out_offset x_offset y_offset m_offset = " << *out_offset << " " << *x_offset << " " << *y_offset << " " << *mod_offset << std::endl;
 
-    if (!check_memory(state, max_memory_index, 48))
+    const auto max_memory_index = std::max(std::max(*x_offset, *y_offset), std::max(*out_offset, *mod_offset));
+    std::cout << "max memory index is " << max_memory_index << std::endl;
+
+    //TODO only expand memory by 56 bytes if mod/inv is out of the bounds
+    if (!check_memory(state, max_memory_index, 56))
          return nullptr;
 
     const auto out = &state.memory[static_cast<size_t>(*out_offset)];
     const auto x = &state.memory[static_cast<size_t>(*x_offset)];
     const auto y = &state.memory[static_cast<size_t>(*y_offset)];
     const auto m = &state.memory[static_cast<size_t>(*mod_offset)];
-    const uint64_t *inv = reinterpret_cast<const uint64_t*>(&state.memory[*(mod_offset + 1)]);
+    const uint64_t *inv = reinterpret_cast<const uint64_t*>(&state.memory[*mod_offset + 48]);
 
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
