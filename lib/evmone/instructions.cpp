@@ -1269,6 +1269,8 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
         reinterpret_cast<uint64_t*>(m)
     );
 
+    addmod_count++;
+
     return ++instr;
 }
 
@@ -1296,6 +1298,8 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
         reinterpret_cast<uint64_t*>(y),
         reinterpret_cast<uint64_t*>(m)
     );
+
+    submod_count++;
 
     return ++instr;
 }
@@ -1352,6 +1356,8 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
         reinterpret_cast<uint64_t*>(m),
         inv
     );
+
+    mulmodmont_count++;
 
     /*
     std::cout << "out is ";
