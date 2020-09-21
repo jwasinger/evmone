@@ -12,6 +12,13 @@
 #include <cstdint>
 #include <vector>
 
+
+
+
+extern int mulmodmont_count;
+extern int submod_count;
+extern int addmod_count;
+
 namespace evmone
 {
 using uint256 = intx::uint256;
@@ -19,6 +26,8 @@ using uint256 = intx::uint256;
 using bytes32 = std::array<uint8_t, 32>;
 
 using bytes = std::basic_string<uint8_t>;
+
+
 
 /// The stack for 256-bit EVM words.
 ///

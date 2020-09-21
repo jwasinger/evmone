@@ -9,9 +9,6 @@
 #include <iomanip>
 #include <byteswap.h>
 
-int mulmodmont_count = 0;
-int submod_count = 0;
-int addmod_count = 0;
 
 #if XXH_SWAP
 static inline uint64_t XXH_swap64(uint64_t x)
