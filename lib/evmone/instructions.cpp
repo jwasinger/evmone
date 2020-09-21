@@ -7,6 +7,34 @@
 
 #include <iostream>
 #include <iomanip>
+#include <byteswap.h>
+
+int mulmodmont_count = 0;
+int submod_count = 0;
+int addmod_count = 0;
+
+#if XXH_SWAP
+static inline uint64_t XXH_swap64(uint64_t x)
+{
+    return ((x << 56) & 0xff00000000000000ULL) |
+           ((x << 40) & 0x00ff000000000000ULL) |
+           ((x << 24) & 0x0000ff0000000000ULL) |
+           ((x << 8)  & 0x000000ff00000000ULL) |
+           ((x >> 8)  & 0x00000000ff000000ULL) |
+           ((x >> 24) & 0x0000000000ff0000ULL) |
+           ((x >> 40) & 0x000000000000ff00ULL) |
+           ((x >> 56) & 0x00000000000000ffULL);
+}
+#define swap64 XXH_swap64
+#else
+#define swap64 bswap_64
+#endif
+
+void swap_limbs(uint64_t *vals) {
+    for (auto i = 0; i < 6; i++) {
+        vals[i] = swap64(vals[i]);
+    }
+}
 
 namespace evmone
 {
@@ -1262,12 +1290,18 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
 
+    swap_limbs(reinterpret_cast<uint64_t*>(x));
+    swap_limbs(reinterpret_cast<uint64_t*>(y));
+    swap_limbs(reinterpret_cast<uint64_t*>(m));
+
     addmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
         reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(y),
         reinterpret_cast<uint64_t*>(m)
     );
+
+    addmod_count++;
 
     return ++instr;
 }
@@ -1290,6 +1324,10 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
 
+    swap_limbs(reinterpret_cast<uint64_t*>(x));
+    swap_limbs(reinterpret_cast<uint64_t*>(y));
+    swap_limbs(reinterpret_cast<uint64_t*>(m));
+
     subtractmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
         reinterpret_cast<uint64_t*>(x),
@@ -1297,6 +1335,7 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
         reinterpret_cast<uint64_t*>(m)
     );
 
+    submod_count++;
     return ++instr;
 }
 
@@ -1331,7 +1370,13 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto x = &state.memory[static_cast<size_t>(x_offset)];
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
-    const uint64_t inv = *reinterpret_cast<const uint64_t*>(&state.memory[mod_offset + 48]);
+    uint64_t inv = *reinterpret_cast<const uint64_t*>(&state.memory[mod_offset + 48]);
+
+    swap_limbs(reinterpret_cast<uint64_t*>(x));
+    swap_limbs(reinterpret_cast<uint64_t*>(y));
+    swap_limbs(reinterpret_cast<uint64_t*>(m));
+    inv = swap64(inv);
+
     /*
     std::cout << "inv is " << inv << std::endl;
 
@@ -1358,6 +1403,7 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     print_bytes384((uint8_t *)out);
     */
 
+    mulmodmont_count++;
     return ++instr;
 }
 
