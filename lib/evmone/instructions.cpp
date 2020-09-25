@@ -27,9 +27,9 @@ static inline uint64_t XXH_swap64(uint64_t x)
 #define swap64 bswap_64
 #endif
 
-void swap_limbs(uint64_t *vals) {
+void swap_limbs(uint64_t *out, uint64_t *in) {
     for (auto i = 0; i < 6; i++) {
-        vals[i] = swap64(vals[i]);
+        out[i] = swap64(in[5-i]);
     }
 }
 
@@ -1270,7 +1270,8 @@ const instruction* opx_beginblock(const instruction* instr, execution_state& sta
 
 const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto params = intx::as_bytes(state.stack.pop());
+    const auto params = intx::as_bytes(state.stack[0]);
+    state.stack.pop();
 
     const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
     const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
@@ -1287,25 +1288,31 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
 
-    swap_limbs(reinterpret_cast<uint64_t*>(x));
-    swap_limbs(reinterpret_cast<uint64_t*>(y));
-    swap_limbs(reinterpret_cast<uint64_t*>(m));
+    uint64_t x_[6];
+    uint64_t y_[6];
+    uint64_t m_[6];
+    uint64_t out_[6];
+    swap_limbs(x_,reinterpret_cast<uint64_t*>(x));
+    swap_limbs(y_,reinterpret_cast<uint64_t*>(y));
+    swap_limbs(m_,reinterpret_cast<uint64_t*>(m));
 
     addmod384_64bitlimbs(
-        reinterpret_cast<uint64_t*>(out),
-        reinterpret_cast<uint64_t*>(x),
-        reinterpret_cast<uint64_t*>(y),
-        reinterpret_cast<uint64_t*>(m)
+        reinterpret_cast<uint64_t*>(out_),
+        reinterpret_cast<uint64_t*>(x_),
+        reinterpret_cast<uint64_t*>(y_),
+        reinterpret_cast<uint64_t*>(m_)
     );
 
-    addmod_count++;
+    swap_limbs(reinterpret_cast<uint64_t*>(out),out_);
 
     return ++instr;
 }
 
 const instruction* op_submod384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto params = intx::as_bytes(state.stack.pop());
+    const auto params = intx::as_bytes(state.stack[0]);
+    state.stack.pop();
+
     const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
     const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
     const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
@@ -1321,18 +1328,23 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
 
-    swap_limbs(reinterpret_cast<uint64_t*>(x));
-    swap_limbs(reinterpret_cast<uint64_t*>(y));
-    swap_limbs(reinterpret_cast<uint64_t*>(m));
+    uint64_t x_[6];
+    uint64_t y_[6];
+    uint64_t m_[6];
+    uint64_t out_[6];
+    swap_limbs(x_,reinterpret_cast<uint64_t*>(x));
+    swap_limbs(y_,reinterpret_cast<uint64_t*>(y));
+    swap_limbs(m_,reinterpret_cast<uint64_t*>(m));
 
     subtractmod384_64bitlimbs(
-        reinterpret_cast<uint64_t*>(out),
-        reinterpret_cast<uint64_t*>(x),
-        reinterpret_cast<uint64_t*>(y),
-        reinterpret_cast<uint64_t*>(m)
+        reinterpret_cast<uint64_t*>(out_),
+        reinterpret_cast<uint64_t*>(x_),
+        reinterpret_cast<uint64_t*>(y_),
+        reinterpret_cast<uint64_t*>(m_)
     );
 
-    submod_count++;
+    swap_limbs(reinterpret_cast<uint64_t*>(out),out_);
+    //submod_count++;
     return ++instr;
 }
 
@@ -1347,7 +1359,9 @@ void print_bytes384(uint8_t * bytes) {
 
 const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto params = intx::as_bytes(state.stack.pop());
+    const auto params = intx::as_bytes(state.stack[0]);
+    state.stack.pop();
+
     const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
     const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
     const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
@@ -1368,12 +1382,6 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
     uint64_t inv = *reinterpret_cast<const uint64_t*>(&state.memory[mod_offset + 48]);
-
-    swap_limbs(reinterpret_cast<uint64_t*>(x));
-    swap_limbs(reinterpret_cast<uint64_t*>(y));
-    swap_limbs(reinterpret_cast<uint64_t*>(m));
-    inv = swap64(inv);
-
     /*
     std::cout << "inv is " << inv << std::endl;
 
@@ -1387,20 +1395,27 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     print_bytes384((uint8_t *)m);
     */
 
+
+    uint64_t x_[6];
+    uint64_t y_[6];
+    uint64_t m_[6];
+    uint64_t out_[6];
+    uint64_t inv_;
+    swap_limbs(x_,reinterpret_cast<uint64_t*>(x));
+    swap_limbs(y_,reinterpret_cast<uint64_t*>(y));
+    swap_limbs(m_,reinterpret_cast<uint64_t*>(m));
+    inv_ = swap64(inv);
+
     montmul384_64bitlimbs(
-        reinterpret_cast<uint64_t*>(out),
-        reinterpret_cast<uint64_t*>(x),
-        reinterpret_cast<uint64_t*>(y),
-        reinterpret_cast<uint64_t*>(m),
-        inv
+        out_,
+        reinterpret_cast<uint64_t*>(x_),
+        reinterpret_cast<uint64_t*>(y_),
+        reinterpret_cast<uint64_t*>(m_),
+        inv_
     );
 
-    /*
-    std::cout << "out is ";
-    print_bytes384((uint8_t *)out);
-    */
+    swap_limbs(reinterpret_cast<uint64_t*>(out),out_);
 
-    mulmodmont_count++;
     return ++instr;
 }
 

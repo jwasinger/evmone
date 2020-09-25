@@ -32,10 +32,12 @@ evmc_result execute(evmc_vm* /*unused*/, const evmc_host_interface* host, evmc_h
 
     // print the number of mulmods, addmods and submods
 
+    /*
     std::cout << "mulmodcount: " << mulmodmont_count << "\naddmod count: " << addmod_count << "\nsubmod count: " << submod_count << "\n\n";
     mulmodmont_count = 0;
     addmod_count = 0;
     submod_count = 0;
+    */
 
     return evmc::make_result(
         state->status, gas_left, &state->memory[state->output_offset], state->output_size);

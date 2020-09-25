@@ -6,9 +6,11 @@
 #include "opcodes_helpers.h"
 #include <cassert>
 
+/*
 int mulmodmont_count = 0;
 int submod_count = 0;
 int addmod_count = 0;
+*/
 
 namespace evmone
 {

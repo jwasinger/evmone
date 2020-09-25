@@ -15,9 +15,11 @@
 
 
 
+/*
 extern int mulmodmont_count;
 extern int submod_count;
 extern int addmod_count;
+*/
 
 namespace evmone
 {
