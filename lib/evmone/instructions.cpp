@@ -1243,63 +1243,6 @@ const instruction* opx_beginblock(const instruction* instr, execution_state& sta
 #undef LIMB_BITS
 #undef LIMB_BITS_OVERFLOW
 
-const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
-{
-    const auto params = intx::as_bytes(state.stack.pop());
-
-    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
-    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
-    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
-    const auto mod_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
-
-    const auto max_memory_index = std::max(std::max(x_offset, y_offset), std::max(out_offset, mod_offset));
-
-    if (!check_memory(state, max_memory_index, 48))
-         return nullptr;
-
-    const auto out = &state.memory[static_cast<size_t>(out_offset)];
-    const auto x = &state.memory[static_cast<size_t>(x_offset)];
-    const auto y = &state.memory[static_cast<size_t>(y_offset)];
-    const auto m = &state.memory[static_cast<size_t>(mod_offset)];
-
-    addmod384_64bitlimbs(
-        reinterpret_cast<uint64_t*>(out),
-        reinterpret_cast<uint64_t*>(x),
-        reinterpret_cast<uint64_t*>(y),
-        reinterpret_cast<uint64_t*>(m)
-    );
-
-    return ++instr;
-}
-
-const instruction* op_submod384(const instruction* instr, execution_state& state) noexcept
-{
-    const auto params = intx::as_bytes(state.stack.pop());
-    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
-    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
-    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
-    const auto mod_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
-
-    const auto max_memory_index = std::max(std::max(x_offset, y_offset), std::max(out_offset, mod_offset));
-
-    if (!check_memory(state, max_memory_index, 48))
-         return nullptr;
-
-    const auto out = &state.memory[static_cast<size_t>(out_offset)];
-    const auto x = &state.memory[static_cast<size_t>(x_offset)];
-    const auto y = &state.memory[static_cast<size_t>(y_offset)];
-    const auto m = &state.memory[static_cast<size_t>(mod_offset)];
-
-    subtractmod384_64bitlimbs(
-        reinterpret_cast<uint64_t*>(out),
-        reinterpret_cast<uint64_t*>(x),
-        reinterpret_cast<uint64_t*>(y),
-        reinterpret_cast<uint64_t*>(m)
-    );
-
-    return ++instr;
-}
-
 void print_bytes384(uint8_t * bytes) {
     std::cout << std::hex;
     for (auto i = 0; i < 48; i++) {
@@ -1309,9 +1252,11 @@ void print_bytes384(uint8_t * bytes) {
     std::cout << std::dec << std::endl;
 }
 
-const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
+const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto params = intx::as_bytes(state.stack.pop());
+    const auto params = intx::as_bytes(state.stack[0]);
+    state.stack.pop();
+
     const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
     const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
     const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
@@ -1319,7 +1264,113 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
 
     const auto max_memory_index = std::max(std::max(x_offset, y_offset), std::max(out_offset, mod_offset));
 
-    //std::cout << "out_offset x_offset y_offset m_offset = " << out_offset << " " << x_offset << " " << y_offset << " " << mod_offset << " " << max_memory_index << std::endl;
+    if (!check_memory(state, max_memory_index, 48))
+         return nullptr;
+
+    const auto out = &state.memory[static_cast<size_t>(out_offset)];
+    const auto x = &state.memory[static_cast<size_t>(x_offset)];
+    const auto y = &state.memory[static_cast<size_t>(y_offset)];
+    const auto m = &state.memory[static_cast<size_t>(mod_offset)];
+
+    std::cout << "addmod:\n";
+    std::cout << "x is ";
+    print_bytes384((uint8_t *)x);
+
+    std::cout << "y is ";
+    print_bytes384((uint8_t *)y);
+
+    std::cout << "m is ";
+    print_bytes384((uint8_t *)m);
+
+    addmod384_64bitlimbs(
+        reinterpret_cast<uint64_t*>(out),
+        reinterpret_cast<uint64_t*>(x),
+        reinterpret_cast<uint64_t*>(y),
+        reinterpret_cast<uint64_t*>(m)
+    );
+
+    std::cout << "out is ";
+    print_bytes384((uint8_t *)out);
+    std::cout << std::endl;
+
+    return ++instr;
+}
+
+const instruction* op_submod384(const instruction* instr, execution_state& state) noexcept
+{
+    const auto params = intx::as_bytes(state.stack[0]);
+    state.stack.pop();
+
+    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
+    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
+    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
+    const auto mod_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
+
+    const auto max_memory_index = std::max(std::max(x_offset, y_offset), std::max(out_offset, mod_offset));
+
+    if (!check_memory(state, max_memory_index, 48))
+         return nullptr;
+
+    const auto out = &state.memory[static_cast<size_t>(out_offset)];
+    const auto x = &state.memory[static_cast<size_t>(x_offset)];
+    const auto y = &state.memory[static_cast<size_t>(y_offset)];
+    const auto m = &state.memory[static_cast<size_t>(mod_offset)];
+
+    std::cout << "submod:\n";
+
+    std::cout << "x is ";
+    print_bytes384((uint8_t *)x);
+
+    std::cout << "y is ";
+    print_bytes384((uint8_t *)y);
+
+    std::cout << "m is ";
+    print_bytes384((uint8_t *)m);
+
+    subtractmod384_64bitlimbs(
+        reinterpret_cast<uint64_t*>(out),
+        reinterpret_cast<uint64_t*>(x),
+        reinterpret_cast<uint64_t*>(y),
+        reinterpret_cast<uint64_t*>(m)
+    );
+
+    std::cout << "out is ";
+    print_bytes384((uint8_t *)out);
+    std::cout << std::endl;
+
+    return ++instr;
+}
+
+
+
+void print_bytes256(uint8_t * bytes) {
+    std::cout << std::hex;
+    for (auto i = 0; i < 32; i++) {
+        std::cout << std::setw(2) << std::setfill('0') << static_cast<int>(*(bytes + i));
+    }
+
+    std::cout << std::dec << std::endl;
+}
+
+const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
+{
+    const auto params = intx::as_bytes(state.stack[0]);
+    state.stack.pop();
+
+    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
+    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
+    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
+    const auto mod_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
+
+    const auto max_memory_index = std::max(std::max(x_offset, y_offset), std::max(out_offset, mod_offset));
+
+    /*
+    std::cout << "stack item is " << std::endl;
+    print_bytes256((uint8_t *)params);
+    */
+
+    // std::cout << "out_offset x_offset y_offset m_offset = " << out_offset << " " << x_offset << " " << y_offset << " " << mod_offset << " " << std::endl;
+
     //std::cout << "max memory index is " << max_memory_index << std::endl;
     // std::cout << "max(x_offset, y_offset) = " << std::max(*x_offset, *y_offset) << "\n";
 
@@ -1332,7 +1383,8 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
     const uint64_t inv = *reinterpret_cast<const uint64_t*>(&state.memory[mod_offset + 48]);
-    /*
+
+    std::cout << "mulmod:\n";
     std::cout << "inv is " << inv << std::endl;
 
     std::cout << "x is ";
@@ -1343,7 +1395,6 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
 
     std::cout << "m is ";
     print_bytes384((uint8_t *)m);
-    */
 
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
@@ -1353,10 +1404,9 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
         inv
     );
 
-    /*
     std::cout << "out is ";
     print_bytes384((uint8_t *)out);
-    */
+    std::cout << std::endl;
 
     return ++instr;
 }
