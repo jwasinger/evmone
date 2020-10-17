@@ -1272,26 +1272,12 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
 
-    std::cout << "addmod:\n";
-    std::cout << "x is ";
-    print_bytes384((uint8_t *)x);
-
-    std::cout << "y is ";
-    print_bytes384((uint8_t *)y);
-
-    std::cout << "m is ";
-    print_bytes384((uint8_t *)m);
-
     addmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
         reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(y),
         reinterpret_cast<uint64_t*>(m)
     );
-
-    std::cout << "out is ";
-    print_bytes384((uint8_t *)out);
-    std::cout << std::endl;
 
     return ++instr;
 }
@@ -1316,27 +1302,12 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
     const auto y = &state.memory[static_cast<size_t>(y_offset)];
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
 
-    std::cout << "submod:\n";
-
-    std::cout << "x is ";
-    print_bytes384((uint8_t *)x);
-
-    std::cout << "y is ";
-    print_bytes384((uint8_t *)y);
-
-    std::cout << "m is ";
-    print_bytes384((uint8_t *)m);
-
     subtractmod384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
         reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(y),
         reinterpret_cast<uint64_t*>(m)
     );
-
-    std::cout << "out is ";
-    print_bytes384((uint8_t *)out);
-    std::cout << std::endl;
 
     return ++instr;
 }
@@ -1364,16 +1335,6 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
 
     const auto max_memory_index = std::max(std::max(x_offset, y_offset), std::max(out_offset, mod_offset));
 
-    /*
-    std::cout << "stack item is " << std::endl;
-    print_bytes256((uint8_t *)params);
-    */
-
-    // std::cout << "out_offset x_offset y_offset m_offset = " << out_offset << " " << x_offset << " " << y_offset << " " << mod_offset << " " << std::endl;
-
-    //std::cout << "max memory index is " << max_memory_index << std::endl;
-    // std::cout << "max(x_offset, y_offset) = " << std::max(*x_offset, *y_offset) << "\n";
-
     //TODO only expand memory by 56 bytes if mod/inv is out of the bounds
     if (!check_memory(state, max_memory_index, 56))
          return nullptr;
@@ -1384,18 +1345,6 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto m = &state.memory[static_cast<size_t>(mod_offset)];
     const uint64_t inv = *reinterpret_cast<const uint64_t*>(&state.memory[mod_offset + 48]);
 
-    std::cout << "mulmod:\n";
-    std::cout << "inv is " << inv << std::endl;
-
-    std::cout << "x is ";
-    print_bytes384((uint8_t *)x);
-
-    std::cout << "y is ";
-    print_bytes384((uint8_t *)y);
-
-    std::cout << "m is ";
-    print_bytes384((uint8_t *)m);
-
     montmul384_64bitlimbs(
         reinterpret_cast<uint64_t*>(out),
         reinterpret_cast<uint64_t*>(x),
@@ -1403,10 +1352,6 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
         reinterpret_cast<uint64_t*>(m),
         inv
     );
-
-    std::cout << "out is ";
-    print_bytes384((uint8_t *)out);
-    std::cout << std::endl;
 
     return ++instr;
 }
