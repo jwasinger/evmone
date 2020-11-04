@@ -5,6 +5,7 @@
 #include "execution.hpp"
 #include "analysis.hpp"
 #include <memory>
+#include <iostream>
 
 namespace evmone
 {

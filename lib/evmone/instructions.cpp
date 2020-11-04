@@ -812,6 +812,7 @@ const instruction* op_return(const instruction*, execution_state& state) noexcep
 template <evmc_call_kind kind>
 const instruction* op_call(const instruction* instr, execution_state& state) noexcept
 {
+    // std::cout << "opcall\n";
     const auto arg = instr->arg;
     auto gas = state.stack[0];
     const auto dst = intx::be::trunc<evmc::address>(state.stack[1]);
@@ -828,13 +829,16 @@ const instruction* op_call(const instruction* instr, execution_state& state) noe
     state.stack.pop();
     state.stack.pop();
     state.stack[0] = 0;
-
+    
     if (!check_memory(state, input_offset, input_size))
         return nullptr;
 
     if (!check_memory(state, output_offset, output_size))
         return nullptr;
 
+    if (int(dst.bytes[19]) == 5) {
+        return ++instr;
+    }
 
     auto msg = evmc_message{};
     msg.kind = kind;
