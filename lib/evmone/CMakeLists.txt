@@ -25,7 +25,7 @@ target_include_directories(evmone PUBLIC
     $<BUILD_INTERFACE:${include_dir}>$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 if(CABLE_COMPILER_GNULIKE)
-    target_compile_options(evmone PRIVATE -fno-exceptions -fno-rtti)
+    target_compile_options(evmone PRIVATE -fno-rtti)
 endif()
 set_target_properties(
     evmone

@@ -8,6 +8,11 @@
 #include <iostream>
 #include <iomanip>
 
+#define BOOST_EXCEPTION_DISABLE
+// #include <boost/throw_exception.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
+#include "vector_ref.h"
+
 namespace evmone
 {
 namespace
@@ -809,6 +814,115 @@ const instruction* op_return(const instruction*, execution_state& state) noexcep
     return state.exit(status_code);
 }
 
+using byte = uint8_t;
+using bigint = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<>>;
+using bytesConstRef = vector_ref<byte const>;
+
+
+/// Converts a big-endian byte-stream represented on a templated collection to a templated integer value.
+/// @a _In will typically be either std::string or bytes.
+/// @a T will typically by unsigned, u160, u256 or bigint.
+template <class T, class _In>
+inline T fromBigEndian(_In const& _bytes)
+{
+    T ret = (T)0;
+    for (auto i: _bytes)
+        ret = (T)((ret << 8) | (byte)(typename std::make_unsigned<decltype(i)>::type)i);
+    return ret;
+}
+
+// Parse _count bytes of _in starting with _begin offset as big endian int.
+// If there's not enough bytes in _in, consider it infinitely right-padded with zeroes.
+bigint parseBigEndianRightPadded(bytesConstRef _in, bigint const& _begin, bigint const& _count)
+{
+    if (_begin > _in.count())
+        return 0;
+    assert(_count <= numeric_limits<size_t>::max() / 8); // Otherwise, the return value would not fit in the memory.
+
+    size_t const begin{_begin};
+    size_t const count{_count};
+
+    // crop _in, not going beyond its size
+    bytesConstRef cropped = _in.cropped(begin, std::min(count, _in.count() - begin));
+
+    bigint ret = fromBigEndian<bigint>(cropped);
+    // shift as if we had right-padding zeroes
+    assert(count - cropped.count() <= numeric_limits<size_t>::max() / 8);
+    ret <<= 8 * (count - cropped.count());
+
+    return ret;
+}
+
+
+/// Converts a templated integer value to the big-endian byte-stream represented on a templated collection.
+/// The size of the collection object will be unchanged. If it is too small, it will not represent the
+/// value properly, if too big then the additional elements will be zeroed out.
+/// @a Out will typically be either std::string or bytes.
+/// @a T will typically by unsigned, u160, u256 or bigint.
+template <class T, class Out>
+inline void toBigEndian(T _val, Out& o_out)
+{
+    static_assert(std::is_same<bigint, T>::value || !std::numeric_limits<T>::is_signed, "only unsigned types or bigint supported"); //bigint does not carry sign bit on shift
+    for (auto i = o_out.size(); i != 0; _val >>= 8, i--)
+    {
+        T v = _val & (T)0xff;
+        o_out[i - 1] = (typename Out::value_type)(uint8_t)v;
+    }
+}
+
+void print_bytes(const uint8_t *bytes, int num) {
+    std::cout << std::hex;
+    for (auto i = 0; i < num; i++ ) {
+        std::cout << std::setw(2) << std::setfill('0') << static_cast<int>(*(bytes + i));//<< std::dec << "" << std::hex << std::setw(2) << std::setfill('0');
+    }
+    std::cout << std::dec << std::endl;
+}
+
+bytes execute_modexp(uint8_t *input_data, size_t input_size) {
+    std::cout << "modexp called\n";
+    std::cout << "input data is: ";
+    //print_bytes(input_data, input_size);
+    print_bytes(input_data, input_size);
+
+    // auto _in = std::vector<uint8_t>(msg.input_data, msg.input_data + msg.input_size);
+    auto _in = bytesConstRef(input_data, input_size);
+
+    bigint const baseLength(parseBigEndianRightPadded(_in, 0, 32));
+    bigint const expLength(parseBigEndianRightPadded(_in, 32, 32));
+    bigint const modLength(parseBigEndianRightPadded(_in, 64, 32));
+    std::cout << "base length is " << baseLength.str() << "\n";
+    std::cout << "exp length is " << expLength.str() << "\n";
+    std::cout << "mod length is " << modLength.str() << "\n";
+
+    assert(modLength <= numeric_limits<size_t>::max() / 8); // Otherwise gas should be too expensive.
+    assert(baseLength <= numeric_limits<size_t>::max() / 8); // Otherwise, gas should be too expensive.
+    if (modLength == 0 && baseLength == 0)
+        return bytes{}; // TODO throw exception here
+        //return; // {true, bytes{}}; // This is a special case where expLength can be very big.
+
+    std::cout << "nu\n";
+
+    assert(expLength <= numeric_limits<size_t>::max() / 8);
+
+    bigint const base(parseBigEndianRightPadded(_in, 96, baseLength));
+    bigint const exp(parseBigEndianRightPadded(_in, 96 + baseLength, expLength));
+    bigint const mod(parseBigEndianRightPadded(_in, 96 + baseLength + expLength, modLength));
+
+    std::cout << "base is " << base.str() << "\n";
+    std::cout << "exp is " << exp.str() << "\n";
+    std::cout << "mod is " << mod.str() << "\n";
+    print_bytes(input_data, input_size);
+
+    bigint const result = mod != 0 ? boost::multiprecision::powm(base, exp, mod) : bigint{0};
+
+    std::cout << "result is " << result.str() << "\n";
+
+    size_t const retLength(modLength);
+    bytes ret(0, retLength);
+    toBigEndian(result, ret);
+    return ret;
+}
+
 template <evmc_call_kind kind>
 const instruction* op_call(const instruction* instr, execution_state& state) noexcept
 {
@@ -837,6 +951,12 @@ const instruction* op_call(const instruction* instr, execution_state& state) noe
         return nullptr;
 
     if (int(dst.bytes[19]) == 5) {
+/*
+        std::cout << "input size is " << static_cast<size_t>(input_size) << "\n";
+        std::cout << intx::to_string(input_size);
+*/
+        auto result = execute_modexp(&state.memory[0] + static_cast<uint64_t>(input_offset), static_cast<size_t>(input_size));
+        memcpy(&state.memory[0], &result[0], 20);
         return ++instr;
     }
 

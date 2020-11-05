@@ -49,7 +49,7 @@ if(CABLE_COMPILER_GNULIKE)
     add_compile_options(-Wno-attributes)  # Allow using unknown attributes.
 
     if(CABLE_COMPILER_CLANG)
-        set(CMAKE_CXX_FLAGS_COVERAGE "-fprofile-instr-generate -fcoverage-mapping")
+        set(CMAKE_CXX_FLAGS_COVERAGE "-fprofile-instr-generate -lboost_exception -fcoverage-mapping")
     elseif(CABLE_COMPILER_GNU)
         set(CMAKE_CXX_FLAGS_COVERAGE "--coverage")
     endif()
