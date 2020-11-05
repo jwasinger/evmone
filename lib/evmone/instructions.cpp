@@ -878,11 +878,13 @@ void print_bytes(const uint8_t *bytes, int num) {
     std::cout << std::dec << std::endl;
 }
 
-bytes execute_modexp(uint8_t *input_data, size_t input_size) {
+void execute_modexp(uint8_t *input_data, size_t input_size, uint8_t *output_offset, size_t output_size) {
+/*
     std::cout << "modexp called\n";
     std::cout << "input data is: ";
     //print_bytes(input_data, input_size);
     print_bytes(input_data, input_size);
+*/
 
     // auto _in = std::vector<uint8_t>(msg.input_data, msg.input_data + msg.input_size);
     auto _in = bytesConstRef(input_data, input_size);
@@ -890,17 +892,17 @@ bytes execute_modexp(uint8_t *input_data, size_t input_size) {
     bigint const baseLength(parseBigEndianRightPadded(_in, 0, 32));
     bigint const expLength(parseBigEndianRightPadded(_in, 32, 32));
     bigint const modLength(parseBigEndianRightPadded(_in, 64, 32));
+/*
     std::cout << "base length is " << baseLength.str() << "\n";
     std::cout << "exp length is " << expLength.str() << "\n";
     std::cout << "mod length is " << modLength.str() << "\n";
+*/
 
     assert(modLength <= numeric_limits<size_t>::max() / 8); // Otherwise gas should be too expensive.
     assert(baseLength <= numeric_limits<size_t>::max() / 8); // Otherwise, gas should be too expensive.
     if (modLength == 0 && baseLength == 0)
-        return bytes{}; // TODO throw exception here
+        return; //bytes{}; // TODO throw exception here
         //return; // {true, bytes{}}; // This is a special case where expLength can be very big.
-
-    std::cout << "nu\n";
 
     assert(expLength <= numeric_limits<size_t>::max() / 8);
 
@@ -908,19 +910,27 @@ bytes execute_modexp(uint8_t *input_data, size_t input_size) {
     bigint const exp(parseBigEndianRightPadded(_in, 96 + baseLength, expLength));
     bigint const mod(parseBigEndianRightPadded(_in, 96 + baseLength + expLength, modLength));
 
+/*
     std::cout << "base is " << base.str() << "\n";
     std::cout << "exp is " << exp.str() << "\n";
     std::cout << "mod is " << mod.str() << "\n";
-    print_bytes(input_data, input_size);
+*/
+    // print_bytes(input_data, input_size);
 
     bigint const result = mod != 0 ? boost::multiprecision::powm(base, exp, mod) : bigint{0};
 
-    std::cout << "result is " << result.str() << "\n";
+    // std::cout << "result is " << result.str() << "\n";
 
-    size_t const retLength(modLength);
-    bytes ret(0, retLength);
+    // why does the below cause a runtime error?
+    // bytes ret(0, retLength);
+
+    size_t retLength = modLength.backend().limbs()[0];
+    bytes ret(1, retLength); // filling a basic_string with '0' causes a runtime error?  this code is straight from aleth
     toBigEndian(result, ret);
-    return ret;
+
+    // TODO assert that retLength provided in the CALL is at least as much as retLength
+    // and truncate if not
+    memcpy(output_offset, &ret[0], retLength);
 }
 
 template <evmc_call_kind kind>
@@ -955,8 +965,7 @@ const instruction* op_call(const instruction* instr, execution_state& state) noe
         std::cout << "input size is " << static_cast<size_t>(input_size) << "\n";
         std::cout << intx::to_string(input_size);
 */
-        auto result = execute_modexp(&state.memory[0] + static_cast<uint64_t>(input_offset), static_cast<size_t>(input_size));
-        memcpy(&state.memory[0], &result[0], 20);
+        execute_modexp(&state.memory[0] + static_cast<uint64_t>(input_offset), static_cast<size_t>(input_size), &state.memory[0] + static_cast<size_t>(output_offset), static_cast<size_t>(output_size));
         return ++instr;
     }
 
