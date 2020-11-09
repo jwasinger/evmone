@@ -154,6 +154,7 @@ code_analysis analyze(evmc_revision rev, const uint8_t* code, size_t code_size) 
 
         case 0xc0:
         case 0xc1:
+        case 0xc2:
         {
             constexpr auto imm_size = 16;
 

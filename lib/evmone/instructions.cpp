@@ -1322,13 +1322,13 @@ void print_bytes256(uint8_t* bytes)
 
 const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto params = intx::as_bytes(state.stack[0]);
-    state.stack.pop();
+    const auto params = intx::as_bytes(*instr->arg.push_value);
 
-    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
-    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
-    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
-    const auto mod_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
+    // Instruction immediate value: 4x uint32 little-endian indices.
+    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
+    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
+    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
+    const auto mod_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
 
     const auto max_memory_index =
         std::max(std::max(x_offset, y_offset), std::max(out_offset, mod_offset));
@@ -1520,7 +1520,7 @@ constexpr op_table create_op_table_istanbul() noexcept
 
     table[0xc0] = {op_addmod384, 8, 0, 0};
     table[0xc1] = {op_submod384, 8, 0, 0};
-    table[0xc2] = {op_mulmodmont384, 24, 1, -1};
+    table[0xc2] = {op_mulmodmont384, 24, 0, 0};
     return table;
 }
 
