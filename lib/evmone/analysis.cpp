@@ -151,6 +151,21 @@ code_analysis analyze(evmc_revision rev, const uint8_t* code, size_t code_size) 
         case OP_PC:
             instr.arg.number = code_pos - code - 1;
             break;
+
+        case 0xc0:
+        {
+            constexpr auto imm_size = 16;
+
+            auto& imm_object = analysis.push_values.emplace_back();
+            const auto imm_bytes = intx::as_bytes(imm_object);
+
+            // FIXME: Code bounds are not checked.
+            std::copy_n(code_pos, imm_size, imm_bytes);
+            code_pos += imm_size;
+
+            instr.arg.push_value = &imm_object;
+            break;
+        }
         }
 
         // If this is a terminating instruction or the next instruction is a JUMPDEST.
