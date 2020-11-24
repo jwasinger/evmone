@@ -3,6 +3,7 @@
 // Licensed under the Apache License, Version 2.0.
 
 #include "analysis.hpp"
+#include "mulx_mont_384.h"
 #include <ethash/keccak.hpp>
 
 #include <iomanip>
@@ -1338,14 +1339,21 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     if (!check_memory(state, max_memory_index, 56))
         return nullptr;
 
-    const auto out = &state.memory[static_cast<size_t>(out_offset)];
-    const auto x = &state.memory[static_cast<size_t>(x_offset)];
-    const auto y = &state.memory[static_cast<size_t>(y_offset)];
-    const auto m = &state.memory[static_cast<size_t>(mod_offset)];
+    const auto out = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(out_offset)]);
+    const auto x = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(x_offset)]);
+    const auto y = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(y_offset)]);
+    const auto m = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(mod_offset)]);
     const uint64_t inv = *reinterpret_cast<const uint64_t*>(&state.memory[mod_offset + 48]);
 
-    montmul384_64bitlimbs(reinterpret_cast<uint64_t*>(out), reinterpret_cast<uint64_t*>(x),
-        reinterpret_cast<uint64_t*>(y), reinterpret_cast<uint64_t*>(m), inv);
+#ifndef USE_ASM
+#define USE_ASM 1
+#endif
+
+#if USE_ASM
+    mulx_mont_384(out, x, y, m, inv);
+#else
+    montmul384_64bitlimbs(out, x, y, m, inv);
+#endif
 
     return ++instr;
 }
