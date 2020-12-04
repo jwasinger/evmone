@@ -84,6 +84,15 @@ bytes_view generate_code(evmc_opcode opcode, Mode mode) noexcept
             }
             inner_code.push_back(OP_POP);
         }
+        else if (opcode >= 0xc0 && opcode <= 0xc2)
+        {
+            bytes instr_pair;
+            instr_pair.push_back(OP_PUSH16);
+            std::fill_n(std::back_inserter(instr_pair), 16, 0);
+            instr_pair.push_back(opcode);
+            for (int i = 0; i < stack_limit; ++i)
+                inner_code += instr_pair;
+        }
         break;
     }
     case Mode::full_stack:
@@ -104,6 +113,15 @@ bytes_view generate_code(evmc_opcode opcode, Mode mode) noexcept
             std::fill_n(std::back_inserter(inner_code), stack_limit - 1, opcode);
             inner_code.push_back(OP_POP);
         }
+        else if (opcode >= 0xc0 && opcode <= 0xc2)
+        {
+            for (int i = 0; i < stack_limit; ++i)
+            {
+                inner_code.push_back(OP_PUSH16);
+                std::fill_n(std::back_inserter(inner_code), 16, 0);
+            }
+            std::fill_n(std::back_inserter(inner_code), stack_limit, opcode);
+        }
         break;
     }
     }
@@ -115,7 +133,8 @@ bytes_view generate_code(evmc_opcode opcode, Mode mode) noexcept
 
 bool register_synthetic_benchmarks() noexcept
 {
-    std::vector<evmc_opcode> opcodes{OP_ADD, OP_SUB, OP_MUL, OP_ISZERO, OP_NOT};
+    std::vector<evmc_opcode> opcodes{OP_ADD, OP_SUB, OP_MUL, OP_ISZERO, OP_NOT, evmc_opcode(0xc0),
+        evmc_opcode(0xc1), evmc_opcode(0xc2)};
     for (int i = OP_PUSH1; i <= OP_PUSH32; ++i)
         opcodes.push_back(static_cast<evmc_opcode>(i));
 
@@ -145,7 +164,19 @@ bool register_synthetic_benchmarks() noexcept
         std::cout << "PUSH16/min_stack:\n"
                   << hex(generate_code(OP_PUSH16, Mode::min_stack)) << "\n"
                   << "PUSH16/full_stack:\n"
-                  << hex(generate_code(OP_PUSH16, Mode::full_stack)) << "\n";
+                  << hex(generate_code(OP_PUSH16, Mode::full_stack)) << "\n"
+                  << "ADDMOD384/min_stack:\n"
+                  << hex(generate_code(evmc_opcode(0xc0), Mode::min_stack)) << "\n"
+                  << "ADDMOD384/full_stack:\n"
+                  << hex(generate_code(evmc_opcode(0xc0), Mode::full_stack)) << "\n"
+                  << "SUBMOD384/min_stack:\n"
+                  << hex(generate_code(evmc_opcode(0xc1), Mode::min_stack)) << "\n"
+                  << "SUBMOD384/full_stack:\n"
+                  << hex(generate_code(evmc_opcode(0xc1), Mode::full_stack)) << "\n"
+                  << "MULMODMONT384/min_stack:\n"
+                  << hex(generate_code(evmc_opcode(0xc2), Mode::min_stack)) << "\n"
+                  << "MULMODMONT384/full_stack:\n"
+                  << hex(generate_code(evmc_opcode(0xc2), Mode::full_stack)) << "\n";
     }
 
     return true;
