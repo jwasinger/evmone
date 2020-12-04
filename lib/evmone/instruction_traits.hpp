@@ -159,6 +159,10 @@ constexpr std::array<Traits, 256> traits = []() noexcept {
     table[OP_LOG3] = {"LOG3", 5, -5};
     table[OP_LOG4] = {"LOG4", 6, -6};
 
+    table[0xc0] = {"ADDMOD384", 1, -1};
+    table[0xc1] = {"SUBMOD384", 1, -1};
+    table[0xc2] = {"MULMODMONT384", 1, -1};
+
     table[OP_CREATE] = {"CREATE", 3, -2};
     table[OP_CALL] = {"CALL", 7, -6};
     table[OP_CALLCODE] = {"CALLCODE", 7, -6};
@@ -318,6 +322,9 @@ inline constexpr std::array<int16_t, 256> gas_costs<EVMC_ISTANBUL> = []() noexce
     table[OP_EXTCODEHASH] = 700;
     table[OP_SELFBALANCE] = 5;
     table[OP_SLOAD] = 800;
+    table[0xc0] = 8;
+    table[0xc1] = 8;
+    table[0xc2] = 24;
     return table;
 }();
 

@@ -429,6 +429,10 @@ constexpr std::array<instruction_exec_fn, 256> instruction_implementations = [](
     table[OP_LOG3] = op_log<OP_LOG3>;
     table[OP_LOG4] = op_log<OP_LOG4>;
 
+    table[0xc0] = op_addmod384;
+    table[0xc1] = op_submod384;
+    table[0xc2] = op_mulmodmont384;
+
     table[OP_CREATE] = op_create<EVMC_CREATE>;
     table[OP_CALL] = op_call<EVMC_CALL>;
     table[OP_CALLCODE] = op_call<EVMC_CALLCODE>;
