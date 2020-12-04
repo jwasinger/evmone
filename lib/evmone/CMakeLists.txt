@@ -1,6 +1,6 @@
 # evmone: Fast Ethereum Virtual Machine implementation
-# Copyright 2019-2020 Pawel Bylica.
-# Licensed under the Apache License, Version 2.0.
+# Copyright 2019-2020 The evmone Authors.
+# SPDX-License-Identifier: Apache-2.0
 
 include(LibraryTools)
 
@@ -18,7 +18,10 @@ add_library(evmone
     evmone.cpp
     execution.cpp
     execution.hpp
+    instruction_traits.hpp
     instructions.cpp
+    instructions.hpp
+    instructions_calls.cpp
     limits.hpp
     mulx_mont_384.h
     mulx_mont_384-x86_64.s

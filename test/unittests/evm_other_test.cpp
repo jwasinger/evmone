@@ -1,6 +1,6 @@
 // evmone: Fast Ethereum Virtual Machine implementation
-// Copyright 2019 The evmone Authors.
-// Licensed under the Apache License, Version 2.0.
+// Copyright 2019-2020 The evmone Authors.
+// SPDX-License-Identifier: Apache-2.0
 
 /// This file contains non-mainstream EVM unit tests not matching any concrete category:
 /// - regression tests,
@@ -8,12 +8,11 @@
 /// - evmone's internal tests.
 
 #include "evm_fixture.hpp"
-
 #include <evmone/limits.hpp>
 
-using evm_other = evm;
+using evmone::test::evm;
 
-TEST_F(evm_other, evmone_loaded_program_relocation)
+TEST_P(evm, evmone_loaded_program_relocation)
 {
     // The bytecode of size 2 will create evmone's loaded program of size 4 and will cause
     // the relocation of the C++ vector containing the program instructions.
@@ -21,7 +20,7 @@ TEST_F(evm_other, evmone_loaded_program_relocation)
     EXPECT_GAS_USED(EVMC_SUCCESS, 0);
 }
 
-TEST_F(evm_other, evmone_block_stack_req_overflow)
+TEST_P(evm, evmone_block_stack_req_overflow)
 {
     // This tests constructs a code with single basic block which stack requirement is > int16 max.
     // Such basic block can cause int16_t overflow during analysis.
@@ -35,7 +34,7 @@ TEST_F(evm_other, evmone_block_stack_req_overflow)
     EXPECT_STATUS(EVMC_STACK_UNDERFLOW);
 }
 
-TEST_F(evm_other, evmone_block_max_stack_growth_overflow)
+TEST_P(evm, evmone_block_max_stack_growth_overflow)
 {
     // This tests constructs a code with single basic block which stack max growth is > int16 max.
     // Such basic block can cause int16_t overflow during analysis.
@@ -61,7 +60,7 @@ TEST_F(evm_other, evmone_block_max_stack_growth_overflow)
     }
 }
 
-TEST_F(evm_other, evmone_block_gas_cost_overflow_create)
+TEST_P(evm, evmone_block_gas_cost_overflow_create)
 {
     // The goal is to build bytecode with as many CREATE instructions (the most expensive one)
     // as possible but with having balanced stack.
@@ -87,10 +86,13 @@ TEST_F(evm_other, evmone_block_gas_cost_overflow_create)
 
     execute(gas_max - 1, code);
     EXPECT_STATUS(EVMC_OUT_OF_GAS);
-    EXPECT_TRUE(host.recorded_calls.empty());
+    if (!host.recorded_calls.empty())  // turbo
+    {
+        EXPECT_EQ(host.recorded_calls.size(), 3);  // baseline
+    }
 }
 
-TEST_F(evm_other, evmone_block_gas_cost_overflow_balance)
+TEST_P(evm, evmone_block_gas_cost_overflow_balance)
 {
     // Here we build single-block bytecode with as many BALANCE instructions as possible.
 
@@ -109,10 +111,13 @@ TEST_F(evm_other, evmone_block_gas_cost_overflow_balance)
 
     execute(gas_max - 1, code);
     EXPECT_STATUS(EVMC_OUT_OF_GAS);
-    EXPECT_TRUE(host.recorded_account_accesses.empty());
+    if (!host.recorded_account_accesses.empty())  // turbo
+    {
+        EXPECT_EQ(host.recorded_account_accesses.size(), 200);  // baseline
+    }
 }
 
-TEST_F(evm_other, loop_full_of_jumpdests)
+TEST_P(evm, loop_full_of_jumpdests)
 {
     // The code is a simple loop with a counter taken from the input or a constant (325) if the
     // input is zero. The loop body contains of only JUMPDESTs, as much as the code size limit
@@ -135,7 +140,7 @@ TEST_F(evm_other, loop_full_of_jumpdests)
     EXPECT_GAS_USED(EVMC_SUCCESS, 7987882);
 }
 
-TEST_F(evm_other, jumpdest_with_high_offset)
+TEST_P(evm, jumpdest_with_high_offset)
 {
     for (auto offset : {3u, 16383u, 16384u, 32767u, 32768u, 65535u, 65536u})
     {

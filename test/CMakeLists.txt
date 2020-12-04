@@ -1,6 +1,6 @@
 # evmone: Fast Ethereum Virtual Machine implementation
 # Copyright 2019-2020 The evmone Authors.
-# Licensed under the Apache License, Version 2.0.
+# SPDX-License-Identifier: Apache-2.0
 
 include(GoogleTest)
 include(${PROJECT_SOURCE_DIR}/evmc/cmake/EVMC.cmake)
@@ -15,7 +15,7 @@ add_subdirectory(bench)
 add_subdirectory(internal_benchmarks)
 add_subdirectory(unittests)
 
-set(targets evm-test evmone-bench evmone-bench-internal evmone-unittests testutils)
+set(targets evmone-bench evmone-bench-internal evmone-unittests testutils)
 
 if(EVMONE_FUZZING)
     add_subdirectory(fuzzer)
@@ -31,6 +31,9 @@ set_target_properties(
 
 get_target_property(type evmone TYPE)
 if(type STREQUAL SHARED_LIBRARY)
-    add_test(NAME ${PROJECT_NAME}/evm-test COMMAND evm-test $<TARGET_FILE:evmone>)
     evmc_add_vm_test(NAME ${PROJECT_NAME}/evmc-vmtester TARGET evmone)
+
+    if(TARGET evm-test)
+        add_test(NAME ${PROJECT_NAME}/evm-test COMMAND evm-test $<TARGET_FILE:evmone>)
+    endif()
 endif()

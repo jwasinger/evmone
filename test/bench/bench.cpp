@@ -1,19 +1,15 @@
 // evmone: Fast Ethereum Virtual Machine implementation
-// Copyright 2019 The evmone Authors.
-// Licensed under the Apache License, Version 2.0.
+// Copyright 2019-2020 The evmone Authors.
+// SPDX-License-Identifier: Apache-2.0
 
-#include <benchmark/benchmark.h>
-#include <evmc/evmc.hpp>
+#include "helpers.hpp"
 #include <evmc/loader.h>
-#include <evmone/analysis.hpp>
 #include <evmone/evmone.h>
 #include <test/utils/utils.hpp>
-
 #include <cctype>
 #include <fstream>
 #include <iostream>
 #include <memory>
-
 
 #if HAVE_STD_FILESYSTEM
 #include <filesystem>
@@ -23,50 +19,13 @@ namespace fs = std::filesystem;
 namespace fs = ghc::filesystem;
 #endif
 
+namespace evmone::test
+{
 using namespace benchmark;
 
 namespace
 {
-constexpr auto gas_limit = std::numeric_limits<int64_t>::max();
-auto vm = evmc::VM{};
-
 constexpr auto inputs_extension = ".inputs";
-
-inline evmc::result execute(bytes_view code, bytes_view input) noexcept
-{
-    auto msg = evmc_message{};
-    msg.gas = gas_limit;
-    msg.input_data = input.data();
-    msg.input_size = input.size();
-    return vm.execute(EVMC_ISTANBUL, msg, code.data(), code.size());
-}
-
-void execute(State& state, bytes_view code, bytes_view input) noexcept
-{
-    auto total_gas_used = int64_t{0};
-    auto iteration_gas_used = int64_t{0};
-    for (auto _ : state)
-    {
-        auto r = execute(code, input);
-        iteration_gas_used = gas_limit - r.gas_left;
-        total_gas_used += iteration_gas_used;
-    }
-    state.counters["gas_used"] = Counter(static_cast<double>(iteration_gas_used));
-    state.counters["gas_rate"] = Counter(static_cast<double>(total_gas_used), Counter::kIsRate);
-}
-
-void analyse(State& state, bytes_view code) noexcept
-{
-    auto bytes_analysed = uint64_t{0};
-    for (auto _ : state)
-    {
-        auto r = evmone::analyze(EVMC_ISTANBUL, code.data(), code.size());
-        DoNotOptimize(r);
-        bytes_analysed += code.size();
-    }
-    state.counters["size"] = Counter(static_cast<double>(code.size()));
-    state.counters["rate"] = Counter(static_cast<double>(bytes_analysed), Counter::kIsRate);
-}
 
 struct benchmark_case
 {
@@ -114,7 +73,7 @@ void load_benchmark(const fs::path& path, const std::string& name_prefix)
 
     auto code = std::make_shared<bytes>(from_hexx(code_hexx));
 
-    RegisterBenchmark((base_name + "/analysis").c_str(), [code](State& state) {
+    RegisterBenchmark(("analyse/" + base_name).c_str(), [code](State& state) {
         analyse(state, *code);
     })->Unit(kMicrosecond);
 
@@ -127,12 +86,13 @@ void load_benchmark(const fs::path& path, const std::string& name_prefix)
 
     auto base = benchmark_case{};
     base.code = std::move(code);
+    const auto execute_name = "execute/" + base_name;
 
     auto inputs_path = path;
     inputs_path.replace_extension(inputs_extension);
     if (!fs::exists(inputs_path))
     {
-        RegisterBenchmark(base_name.c_str(), base)->Unit(kMicrosecond);
+        RegisterBenchmark(execute_name.c_str(), base)->Unit(kMicrosecond);
     }
     else
     {
@@ -148,7 +108,7 @@ void load_benchmark(const fs::path& path, const std::string& name_prefix)
                 if (l.empty())
                     continue;
                 input = base;
-                name = base_name + '/' + std::move(l);
+                name = execute_name + '/' + std::move(l);
                 st = state::input;
                 break;
 
@@ -279,9 +239,11 @@ int parseargs(int argc, char** argv)
     return 0;
 }
 }  // namespace
+}  // namespace evmone::test
 
 int main(int argc, char** argv)
 {
+    using namespace evmone::test;
     try
     {
         Initialize(&argc, argv);

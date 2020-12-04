@@ -5,9 +5,9 @@
 /// This file contains unit tests for EVM384 prototype.
 #include "evm_fixture.hpp"
 
-using evm386 = evm;
+using evmone::test::evm;
 
-TEST_F(evm386, addmod_1)
+TEST_P(evm, addmod_1)
 {
     rev = EVMC_ISTANBUL;
     const auto indices_packed = push("00000000000000000000003000000060");  // 0,0,48,96
@@ -26,7 +26,7 @@ TEST_F(evm386, addmod_1)
         "2c104a");
 }
 
-TEST_F(evm386, submod_1)
+TEST_P(evm, submod_1)
 {
     rev = EVMC_ISTANBUL;
     const auto indices_packed = push("00000000000000000000003000000060");  // 0,0,48,96
@@ -45,7 +45,7 @@ TEST_F(evm386, submod_1)
         "968d2b");
 }
 
-TEST_F(evm386, mulmod_garbage)
+TEST_P(evm, mulmod_garbage)
 {
     rev = EVMC_ISTANBUL;
     const auto indices_packed = push("00000000000000000000003000000060");  // 0,0,48,96
