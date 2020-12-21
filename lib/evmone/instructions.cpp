@@ -1255,6 +1255,53 @@ void print_bytes384(uint8_t* bytes)
     std::cout << std::dec << std::endl;
 }
 
+// same as check_memory but doesn't expand memory
+bool static_check_memory(execution_state& state, const uint256& offset, uint64_t size) {
+    if (offset > max_buffer_size)
+    {
+        state.exit(EVMC_OUT_OF_GAS);
+        return false;
+    }
+
+    const auto new_size = static_cast<uint64_t>(offset) + size;
+    const auto current_size = state.memory.size();
+    if (new_size > current_size) {
+        state.exit(EVMC_OUT_OF_GAS);
+        return false;
+    } else {
+        return true;
+    }
+}
+
+void print_field_elements(const uint8_t *mem_offset, size_t field_size, size_t num_elems) {
+    std::cout << "LOGF" << num_elems << "\n";
+    for (size_t i = 0; i < num_elems; i++) {
+        std::cout << mem_offset + i * field_size << ": " << std::hex;
+        for (size_t j = 0; j < field_size; j++) {
+            std::cout << std::setw(2) << std::setfill('0') << static_cast<int>(*(mem_offset + i * field_size + j));
+        }
+        std::cout << "\n";
+    }
+
+    std::cout << "\n";
+}
+
+// stack (top starting right) - offset field_size num_elems
+const instruction* op_logf(const instruction* instr, execution_state& state) noexcept
+{
+    const uint64_t num_elems = static_cast<uint64_t>(state.stack.pop().lo);
+    const uint64_t field_size = static_cast<size_t>(state.stack.pop().lo);
+    const uint64_t offset = static_cast<size_t>(state.stack.pop().lo);
+
+    if (static_check_memory(state, offset, offset + num_elems * field_size)) {
+        print_field_elements(&state.memory[offset], field_size, num_elems);
+    } else {
+        std::cout << "LOGF: memory check failed\n";
+    }
+
+    return ++instr;
+}
+
 const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
 {
     const auto arg = state.stack.pop();
@@ -1530,6 +1577,7 @@ constexpr op_table create_op_table_istanbul() noexcept
     table[0xc0] = {op_addmod384, 8, 1, -1};
     table[0xc1] = {op_submod384, 8, 1, -1};
     table[0xc2] = {op_mulmodmont384, 24, 1, -1};
+    table[0xc3] = {op_logf, 1, 3, -3};
     return table;
 }
 
