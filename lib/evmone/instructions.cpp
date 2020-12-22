@@ -1296,7 +1296,7 @@ const instruction* op_logf(const instruction* instr, execution_state& state) noe
     const uint64_t field_size = static_cast<size_t>(state.stack.pop().lo);
     const uint64_t offset = static_cast<size_t>(state.stack.pop().lo);
 
-    if (static_check_memory(state, offset, offset + num_elems * field_size)) {
+    if (static_check_memory(state, offset, num_elems * field_size)) {
         print_field_elements(&state.memory[offset], offset, field_size, num_elems);
     } else {
         std::cout << "LOGF: memory check failed\n";
