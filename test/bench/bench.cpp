@@ -38,7 +38,11 @@ inline evmc::result execute(bytes_view code, bytes_view input) noexcept
     msg.gas = gas_limit;
     msg.input_data = input.data();
     msg.input_size = input.size();
-    return vm.execute(EVMC_ISTANBUL, msg, code.data(), code.size());
+    auto result = vm.execute(EVMC_ISTANBUL, msg, code.data(), code.size());
+
+        std::cout << "execution finished --------------------------------------------------\n";
+        exit(-1);
+    return result;
 }
 
 void execute(State& state, bytes_view code, bytes_view input) noexcept
@@ -63,6 +67,7 @@ void analyse(State& state, bytes_view code) noexcept
         auto r = evmone::analyze(EVMC_ISTANBUL, code.data(), code.size());
         DoNotOptimize(r);
         bytes_analysed += code.size();
+
     }
     state.counters["size"] = Counter(static_cast<double>(code.size()));
     state.counters["rate"] = Counter(static_cast<double>(bytes_analysed), Counter::kIsRate);
