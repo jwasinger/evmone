@@ -1273,14 +1273,17 @@ bool static_check_memory(execution_state& state, const uint256& offset, uint64_t
     }
 }
 
-void print_field_elements(const uint8_t *mem_offset, size_t field_size, size_t num_elems) {
+void print_field_elements(const uint8_t *mem_offset, const uint64_t evm_offset, size_t field_size, size_t num_elems) {
     std::cout << "LOGF" << num_elems << "\n";
+
+    // std::cout << field_size << " " << num_elems <<  " " << static_cast<int>(*mem_offset) << "\n";
+
     for (size_t i = 0; i < num_elems; i++) {
-        std::cout << mem_offset + i * field_size << ": " << std::hex;
+        std::cout << evm_offset + i * field_size << ": " << std::hex;
         for (size_t j = 0; j < field_size; j++) {
             std::cout << std::setw(2) << std::setfill('0') << static_cast<int>(*(mem_offset + i * field_size + j));
         }
-        std::cout << "\n";
+        std::cout << std::dec << "\n";
     }
 
     std::cout << "\n";
@@ -1294,7 +1297,7 @@ const instruction* op_logf(const instruction* instr, execution_state& state) noe
     const uint64_t offset = static_cast<size_t>(state.stack.pop().lo);
 
     if (static_check_memory(state, offset, offset + num_elems * field_size)) {
-        print_field_elements(&state.memory[offset], field_size, num_elems);
+        print_field_elements(&state.memory[offset], offset, field_size, num_elems);
     } else {
         std::cout << "LOGF: memory check failed\n";
     }
