@@ -29,6 +29,10 @@ evmc_result execute(evmc_vm* /*unused*/, const evmc_host_interface* host, evmc_h
     const auto gas_left =
         (state->status == EVMC_SUCCESS || state->status == EVMC_REVERT) ? state->gas_left : 0;
 
+    num_mulmodmont384 = 0;
+    num_addmod384 = 0;
+    num_submod384 = 0;
+
     return evmc::make_result(
         state->status, gas_left, &state->memory[state->output_offset], state->output_size);
 }

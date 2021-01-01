@@ -53,6 +53,7 @@ void execute(State& state, bytes_view code, bytes_view input) noexcept
     }
     state.counters["gas_used"] = Counter(static_cast<double>(iteration_gas_used));
     state.counters["gas_rate"] = Counter(static_cast<double>(total_gas_used), Counter::kIsRate);
+    std::cout << evmone::num_mulmodmont384 << std::endl;
 }
 
 void analyse(State& state, bytes_view code) noexcept

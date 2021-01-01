@@ -9,8 +9,16 @@
 #include <iomanip>
 #include <iostream>
 
+
+
+
 namespace evmone
 {
+
+volatile size_t num_mulmodmont384 = 0;
+volatile size_t num_addmod384 = 0;
+volatile size_t num_submod384 = 0;
+
 namespace
 {
 constexpr auto max_buffer_size = std::numeric_limits<uint32_t>::max();
@@ -1260,7 +1268,6 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     const auto arg = state.stack.pop();
     const auto params = intx::as_bytes(arg);
 
-
     const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
     const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
     const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
@@ -1280,6 +1287,7 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     addmod384_64bitlimbs(reinterpret_cast<uint64_t*>(out), reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(y), reinterpret_cast<uint64_t*>(m));
 
+    num_addmod384++;
     return ++instr;
 }
 
@@ -1307,6 +1315,7 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
     subtractmod384_64bitlimbs(reinterpret_cast<uint64_t*>(out), reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(y), reinterpret_cast<uint64_t*>(m));
 
+    num_submod384++;
     return ++instr;
 }
 
@@ -1344,6 +1353,8 @@ const instruction* op_mulmodmont384(const instruction* instr, execution_state& s
     const auto y = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(y_offset)]);
     const auto m = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(mod_offset)]);
     const uint64_t inv = *reinterpret_cast<const uint64_t*>(&state.memory[mod_offset + 48]);
+    
+    num_mulmodmont384++;
 
 #ifndef USE_ASM
 #define USE_ASM 1

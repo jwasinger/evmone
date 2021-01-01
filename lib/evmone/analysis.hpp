@@ -20,6 +20,10 @@ using bytes32 = std::array<uint8_t, 32>;
 
 using bytes = std::basic_string<uint8_t>;
 
+extern volatile size_t num_mulmodmont384;
+extern volatile size_t num_addmod384;
+extern volatile size_t num_submod384;
+
 /// The stack for 256-bit EVM words.
 ///
 /// This implementation reserves memory inplace for all possible stack items (1024),
