@@ -1289,7 +1289,13 @@ bool load_evm384_input_offsets_mulmodmont(execution_state &state, uint64_t *num_
     uint8_t nl = state.memory[static_cast<size_t>(field_params_offset)];
 
     // num_limbs must be in 1..6
+/*
     if (nl == 0 or nl > 6) {
+        return false;
+    }
+*/
+    // must be 6 for now... until encoding works
+    if (nl != 6) {
         return false;
     }
 
@@ -1330,7 +1336,13 @@ bool load_evm384_input_offsets_addmod_submod(execution_state &state, uint64_t *n
     uint8_t nl = state.memory[static_cast<size_t>(field_params_offset)];
 
     // num_limbs must be in 1..6
+/*
     if (nl == 0 or nl > 6) {
+        return false;
+    }
+*/
+    // must be 6 for now... to test encoding
+    if (nl != 6) {
         return false;
     }
 
@@ -1363,7 +1375,6 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
     if (!load_evm384_input_offsets_addmod_submod(state, &num_limbs, &out, &x, &y, &m)) {
         return nullptr;
     }
-
 
     addmod384_64bitlimbs(reinterpret_cast<uint64_t*>(out), reinterpret_cast<uint64_t*>(x),
         reinterpret_cast<uint64_t*>(y), reinterpret_cast<uint64_t*>(m));
@@ -1400,9 +1411,6 @@ void print_bytes256(uint8_t* bytes)
 
     std::cout << std::dec << std::endl;
 }
-
-
-
 
 const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
 {
