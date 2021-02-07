@@ -25,6 +25,22 @@ constexpr int64_t num_words(uint64_t size_in_bytes) noexcept
     return (static_cast<int64_t>(size_in_bytes) + (word_size - 1)) / word_size;
 }
 
+// TODO state as a static reference
+inline bool check_memory_static(execution_state& state, const uint256& offset, uint64_t size) noexcept
+{
+    const auto new_size = static_cast<uint64_t>(offset) + size;
+    const auto current_size = state.memory.size();
+    if (new_size > current_size)
+    {
+        state.exit(EVMC_OUT_OF_GAS);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
 inline bool check_memory(execution_state& state, const uint256& offset, uint64_t size) noexcept
 {
     if (offset > max_buffer_size)
@@ -1255,12 +1271,90 @@ void print_bytes384(uint8_t* bytes)
     std::cout << std::dec << std::endl;
 }
 
-const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
-{
+bool load_evm384_input_offsets_mulmodmont(execution_state &state, uint64_t *num_limbs, uint64_t **out, uint64_t **x, uint64_t **y, uint64_t **m, uint64_t *mont_const) {
     const auto params = intx::as_bytes(state.stack[0]);
     state.stack.pop();
 
-    uint64_t num_limbs = nullptr;
+    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
+    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
+    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
+    const auto field_params_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
+
+    // check that memory of first byte (num_limbs) is within max
+    if (!check_memory_static(state, field_params_offset, 1)) {
+        return false;
+    }
+
+    // load num_limbs
+    uint8_t nl = state.memory[static_cast<size_t>(field_params_offset)];
+
+    // num_limbs must be in 1..6
+    if (nl == 0 or nl > 6) {
+        return false;
+    }
+
+    // check memory of modulus, out, x, y are in scope
+    const auto max_memory_index =
+        std::max(std::max(x_offset, y_offset), std::max(out_offset, field_params_offset + 8 + 1));
+
+    if (!check_memory_static(state, max_memory_index, nl * 8)) {
+        return false;
+    }
+
+    // set the pointers to the right offsets in memory
+    *out = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(out_offset)]);
+    *x = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(x_offset)]);
+    *y = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(y_offset)]);
+    *m = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1)]);
+    *mont_const = *reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1 + nl * 8)]);
+    *num_limbs = static_cast<uint64_t>(nl);
+
+    return true;
+}
+
+bool load_evm384_input_offsets_addmod_submod(execution_state &state, uint64_t *num_limbs, uint64_t **out, uint64_t **x, uint64_t **y, uint64_t **m) {
+    const auto params = intx::as_bytes(state.stack[0]);
+    state.stack.pop();
+
+    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
+    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
+    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
+    const auto field_params_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
+
+    // check that memory of first byte (num_limbs) is within max
+    if (!check_memory_static(state, field_params_offset, 1)) {
+        return false;
+    }
+
+    // load num_limbs
+    uint8_t nl = state.memory[static_cast<size_t>(field_params_offset)];
+
+    // num_limbs must be in 1..6
+    if (nl == 0 or nl > 6) {
+        return false;
+    }
+
+    // check memory of modulus, out, x, y are in scope
+    const auto max_memory_index =
+        std::max(std::max(x_offset, y_offset), std::max(out_offset, field_params_offset + 1));
+
+    if (!check_memory_static(state, max_memory_index, nl * 8)) {
+        return false;
+    }
+
+    // set the pointers to the right offsets in memory
+    *out = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(out_offset)]);
+    *x = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(x_offset)]);
+    *y = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(y_offset)]);
+    *m = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1)]);
+    *num_limbs = static_cast<uint64_t>(nl);
+
+    return true;
+}
+
+const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
+{
+    uint64_t num_limbs = 1;
     uint64_t *out = nullptr;
     uint64_t *x = nullptr;
     uint64_t *y = nullptr;
@@ -1279,10 +1373,7 @@ const instruction* op_addmod384(const instruction* instr, execution_state& state
 
 const instruction* op_submod384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto params = intx::as_bytes(state.stack[0]);
-    state.stack.pop();
-
-    uint64_t num_limbs = nullptr;
+    uint64_t num_limbs = 1;
     uint64_t *out = nullptr;
     uint64_t *x = nullptr;
     uint64_t *y = nullptr;
@@ -1310,101 +1401,19 @@ void print_bytes256(uint8_t* bytes)
     std::cout << std::dec << std::endl;
 }
 
-bool load_evm384_input_offsets_mulmodmont(execution_state &state, uint64_t *num_limbs, uint64_t **out, uint64_t **x, uint64_t **y, uint64_t **m, uint64_t *mont_const) {
-    const auto params = intx::as_bytes(state.stack[0]);
-    state.stack.pop();
 
-    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
-    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
-    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
-    const auto field_params_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
-
-    // check that memory of first byte (num_limbs) is within max
-    if (!check_memory_static(field_params_offset, 1)) {
-        return false;
-    }
-
-    // load num_limbs
-    uint8_t nl = state.memory[static_cast<size_t>(field_params_offset)];
-
-    // num_limbs must be in 1..6
-    if (nl == 0 or nl > 6) {
-        return false;
-    }
-
-    // check memory of modulus, out, x, y are in scope
-    const auto max_memory_index =
-        std::max(std::max(x_offset, y_offset), std::max(out_offset, field_params_offset + 8 + 1));
-
-    if (!check_memory_static(max_memory_index, nl * 8)) {
-        return false;
-    }
-
-    // set the pointers to the right offsets in memory
-    *out = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(out_offset)]);
-    *x = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(x_offset)]);
-    *y = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(y_offset)]);
-    *m = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1)]);
-    *mont_const = *reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1 + nl * 8)]);
-    *num_limbs = static_cast<uint64_t>(nl);
-
-    return true;
-}
-
-bool load_evm384_input_offsets_addmod_submod(execution_state &state, uint64_t *num_limbs, uint64_t **out, uint64_t **x, uint64_t **y, uint64_t **m) {
-    const auto params = intx::as_bytes(state.stack[0]);
-    state.stack.pop();
-
-    const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
-    const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
-    const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
-    const auto field_params_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
-
-    // check that memory of first byte (num_limbs) is within max
-    if (!check_memory_static(field_params_offset, 1)) {
-        return false;
-    }
-
-    // load num_limbs
-    uint8_t nl = state.memory[static_cast<size_t>(field_params_offset)];
-
-    // num_limbs must be in 1..6
-    if (nl == 0 or nl > 6) {
-        return false;
-    }
-
-    // check memory of modulus, out, x, y are in scope
-    const auto max_memory_index =
-        std::max(std::max(x_offset, y_offset), std::max(out_offset, field_params_offset + 1));
-
-    if (!check_memory_static(max_memory_index, nl * 8)) {
-        return false;
-    }
-
-    // set the pointers to the right offsets in memory
-    *out = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(out_offset)]);
-    *x = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(x_offset)]);
-    *y = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(y_offset)]);
-    *m = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1)]);
-    *num_limbs = static_cast<uint64_t>(nl);
-
-    return true;
-}
 
 
 const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
 {
-    const auto params = intx::as_bytes(state.stack[0]);
-    state.stack.pop();
-
-    uint64_t num_limbs = nullptr;
+    uint64_t num_limbs = 1;
     uint64_t *out = nullptr;
     uint64_t *x = nullptr;
     uint64_t *y = nullptr;
     uint64_t *m = nullptr;
-    uint64_t mont_const = nullptr;
+    uint64_t mont_const = 1;
 
-    if (!load_evm384_input_offsets_addmod_submod(state, &num_limbs, &out, &x, &y, &m, &mont_const)) {
+    if (!load_evm384_input_offsets_mulmodmont(state, &num_limbs, &out, &x, &y, &m, &mont_const)) {
         return nullptr;
     }
 
