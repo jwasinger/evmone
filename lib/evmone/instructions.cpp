@@ -1252,6 +1252,38 @@ const instruction* opx_beginblock(const instruction* instr, execution_state& sta
     return ++instr;
 }
 
+#define BIGINT_BITS 128
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 192
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 256
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 320
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
 #define BIGINT_BITS 384
 #define LIMB_BITS 64
 #define LIMB_BITS_OVERFLOW 128
@@ -1335,14 +1367,8 @@ bool load_evm384_input_offsets_addmod_submod(execution_state &state, uint64_t *n
     // load num_limbs
     uint8_t nl = state.memory[static_cast<size_t>(field_params_offset)];
 
-    // num_limbs must be in 1..6
-/*
-    if (nl == 0 or nl > 6) {
-        return false;
-    }
-*/
-    // must be 6 for now... to test encoding
-    if (nl != 6) {
+    // num_limbs must be in 2..6
+    if (nl < 2 or nl > 6) {
         return false;
     }
 
@@ -1364,9 +1390,69 @@ bool load_evm384_input_offsets_addmod_submod(execution_state &state, uint64_t *n
     return true;
 }
 
+void addmod384(uint64_t *out, uint64_t *x, uint64_t *y, uint64_t *m, size_t num_limbs) {
+    switch (num_limbs) {
+        case 2:
+            addmod128_64bitlimbs(out, x, y, m);
+            break;
+        case 3:
+            addmod192_64bitlimbs(out, x, y, m);
+            break;
+        case 4:
+            addmod256_64bitlimbs(out, x, y, m);
+            break;
+        case 5:
+            addmod320_64bitlimbs(out, x, y, m);
+            break;
+        case 6:
+            addmod384_64bitlimbs(out, x, y, m);
+            break;
+    }
+}
+
+void submod384(uint64_t *out, uint64_t *x, uint64_t *y, uint64_t *m, size_t num_limbs) {
+    switch (num_limbs) {
+        case 2:
+            subtractmod128_64bitlimbs(out, x, y, m);
+            break;
+        case 3:
+            subtractmod192_64bitlimbs(out, x, y, m);
+            break;
+        case 4:
+            subtractmod256_64bitlimbs(out, x, y, m);
+            break;
+        case 5:
+            subtractmod320_64bitlimbs(out, x, y, m);
+            break;
+        case 6:
+            subtractmod384_64bitlimbs(out, x, y, m);
+            break;
+    }
+}
+
+void mulmodmont384(uint64_t *out, uint64_t *x, uint64_t *y, uint64_t *m, uint64_t modinv, size_t num_limbs) {
+    switch (num_limbs) {
+        case 2:
+            montmul128_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 3:
+            montmul192_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 4:
+            montmul256_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 5:
+            montmul320_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 6:
+            montmul384_64bitlimbs(out, x, y, m, modinv);
+            break;
+    }
+}
+
 const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
 {
-    uint64_t num_limbs = 1;
+    uint64_t num_limbs = 2;
     uint64_t *out = nullptr;
     uint64_t *x = nullptr;
     uint64_t *y = nullptr;
@@ -1414,7 +1500,7 @@ void print_bytes256(uint8_t* bytes)
 
 const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
 {
-    uint64_t num_limbs = 1;
+    uint64_t num_limbs = 2;
     uint64_t *out = nullptr;
     uint64_t *x = nullptr;
     uint64_t *y = nullptr;
