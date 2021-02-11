@@ -1373,13 +1373,7 @@ bool load_evm384_input_offsets(bool is_montmul, execution_state &state, uint64_t
         *mont_const = *reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1 + evm384_word_size)]);
     }
 
-
-    std::cout << "mont_const is " << *mont_const << "\n";
-
     *num_limbs = static_cast<uint64_t>(nl);
-
-
-    trace_memory(&state.memory[0], 0, 10);
 
     return true;
 }
