@@ -4,6 +4,8 @@
 
 #include "analysis.hpp"
 #include "mulx_mont_384.h"
+#include "bigint-util.h"
+
 #include <ethash/keccak.hpp>
 
 #include <iomanip>
@@ -23,6 +25,25 @@ constexpr auto word_size = 32;
 constexpr int64_t num_words(uint64_t size_in_bytes) noexcept
 {
     return (static_cast<int64_t>(size_in_bytes) + (word_size - 1)) / word_size;
+}
+
+void print_bytes256(uint8_t* bytes)
+{
+    std::cout << std::hex;
+    for (auto i = 0; i < 32; i++)
+    {
+        std::cout << std::setw(2) << std::setfill('0') << static_cast<int>(*(bytes + i));
+    }
+
+    std::cout << std::dec << std::endl;
+}
+
+void trace_memory(uint8_t *mem, size_t start, size_t num_words) {
+    for (size_t i = 0; i < num_words; i++) {
+        std::cout << std::dec << start + (i * 32) << ": ";
+        print_bytes256(&mem[start + (i * 32)]);
+        std::cout << "\n";
+    }
 }
 
 // TODO state as a static reference
@@ -1352,7 +1373,13 @@ bool load_evm384_input_offsets(bool is_montmul, execution_state &state, uint64_t
         *mont_const = *reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1 + evm384_word_size)]);
     }
 
+
+    std::cout << "mont_const is " << *mont_const << "\n";
+
     *num_limbs = static_cast<uint64_t>(nl);
+
+
+    trace_memory(&state.memory[0], 0, 10);
 
     return true;
 }
@@ -1398,6 +1425,16 @@ void submod384(uint64_t *out, uint64_t *x, uint64_t *y, uint64_t *m, size_t num_
 }
 
 void mulmodmont384(uint64_t *out, uint64_t *x, uint64_t *y, uint64_t *m, uint64_t modinv, size_t num_limbs) {
+/*
+    std::cout << "mulmodmont\n";
+    print_number(x, num_limbs);
+    std::cout << std::endl;
+    print_number(y, num_limbs);
+    std::cout << std::endl;
+    print_number(m, num_limbs);
+    std::cout << std::endl;
+*/
+
     switch (num_limbs) {
         case 2:
             montmul128_64bitlimbs(out, x, y, m, modinv);
@@ -1415,6 +1452,12 @@ void mulmodmont384(uint64_t *out, uint64_t *x, uint64_t *y, uint64_t *m, uint64_
             montmul384_64bitlimbs(out, x, y, m, modinv);
             break;
     }
+
+/*
+    std::cout << num_limbs << std::endl;
+    print_number(out, num_limbs);
+    std::cout << std::endl;
+*/
 }
 
 const instruction* op_addmod384(const instruction* instr, execution_state& state) noexcept
@@ -1460,16 +1503,7 @@ const instruction* op_submod384(const instruction* instr, execution_state& state
 }
 
 
-void print_bytes256(uint8_t* bytes)
-{
-    std::cout << std::hex;
-    for (auto i = 0; i < 32; i++)
-    {
-        std::cout << std::setw(2) << std::setfill('0') << static_cast<int>(*(bytes + i));
-    }
 
-    std::cout << std::dec << std::endl;
-}
 
 const instruction* op_mulmodmont384(const instruction* instr, execution_state& state) noexcept
 {
