@@ -1328,23 +1328,20 @@ bool load_evm384_input_offsets(bool is_montmul, execution_state &state, uint64_t
     const auto params = intx::as_bytes(state.stack[0]);
     state.stack.pop();
 
+    // TODO word size should always be full 32 bytes right?
+
+    const uint8_t nl = static_cast<uint64_t>(params[16]);
+
     const auto out_offset = *reinterpret_cast<const uint32_t*>(&params[12]);
     const auto x_offset = *reinterpret_cast<const uint32_t*>(&params[8]);
     const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
     const auto field_params_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
 
-    // check that memory of first byte (num_limbs) is within max
-    if (!check_memory_static(state, field_params_offset, 1)) {
-        return false;
-    }
-
-    // load num_limbs
-    uint8_t nl = state.memory[static_cast<size_t>(field_params_offset)];
-
-    // num_limbs must be in 2..6
+    // num_limbs must be in 2..6 (for now)
     if (nl < 2 or nl > 6) {
         return false;
     }
+
 
     // TODO not sure what to name this...
     uint32_t effective_field_params_offset = field_params_offset + 1;
@@ -1357,7 +1354,7 @@ bool load_evm384_input_offsets(bool is_montmul, execution_state &state, uint64_t
     const auto max_memory_index =
         std::max(std::max(x_offset, y_offset), std::max(out_offset, effective_field_params_offset));
 
-    uint64_t evm384_word_size = static_cast<uint64_t>(nl) * 8;
+    uint64_t evm384_word_size = nl * 8;
 
     if (!check_memory_static(state, max_memory_index, evm384_word_size)) {
         return false;
@@ -1367,13 +1364,13 @@ bool load_evm384_input_offsets(bool is_montmul, execution_state &state, uint64_t
     *out = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(out_offset)]);
     *x = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(x_offset)]);
     *y = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(y_offset)]);
-    *m = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1)]);
+    *m = reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset)]);
 
     if (is_montmul) {
-        *mont_const = *reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + 1 + evm384_word_size)]);
+        *mont_const = *reinterpret_cast<uint64_t*>(&state.memory[static_cast<size_t>(field_params_offset + evm384_word_size)]);
     }
 
-    *num_limbs = static_cast<uint64_t>(nl);
+    *num_limbs = nl;
 
     return true;
 }
