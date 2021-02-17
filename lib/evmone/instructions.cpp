@@ -1522,6 +1522,36 @@ void submod384(uint64_t *out, uint64_t *x, uint64_t *y, uint64_t *m, size_t num_
         case 6:
             subtractmod384_64bitlimbs(out, x, y, m);
             break;
+        case 7:
+            subtractmod448_64bitlimbs(out, x, y, m);
+            break;
+        case 8:
+            subtractmod512_64bitlimbs(out, x, y, m);
+            break;
+        case 9:
+            subtractmod576_64bitlimbs(out, x, y, m);
+            break;
+        case 10:
+            subtractmod640_64bitlimbs(out, x, y, m);
+            break;
+        case 11:
+            subtractmod704_64bitlimbs(out, x, y, m);
+            break;
+        case 12:
+            subtractmod768_64bitlimbs(out, x, y, m);
+            break;
+        case 13:
+            subtractmod832_64bitlimbs(out, x, y, m);
+            break;
+        case 14:
+            subtractmod896_64bitlimbs(out, x, y, m);
+            break;
+        case 15:
+            subtractmod960_64bitlimbs(out, x, y, m);
+            break;
+        case 16:
+            subtractmod1024_64bitlimbs(out, x, y, m);
+            break;
     }
 }
 
@@ -1551,6 +1581,36 @@ void mulmodmont384(uint64_t *out, uint64_t *x, uint64_t *y, uint64_t *m, uint64_
             break;
         case 6:
             montmul384_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 7:
+            montmul448_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 8:
+            montmul512_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 9:
+            montmul576_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 10:
+            montmul640_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 11:
+            montmul704_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 12:
+            montmul768_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 13:
+            montmul832_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 14:
+            montmul896_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 15:
+            montmul960_64bitlimbs(out, x, y, m, modinv);
+            break;
+        case 16:
+            montmul1024_64bitlimbs(out, x, y, m, modinv);
             break;
     }
 
