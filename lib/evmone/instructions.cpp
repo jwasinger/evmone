@@ -1313,6 +1313,86 @@ const instruction* opx_beginblock(const instruction* instr, execution_state& sta
 #undef LIMB_BITS
 #undef LIMB_BITS_OVERFLOW
 
+#define BIGINT_BITS 448 
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 512
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 576
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 640
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 704
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 768
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 832
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 896
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 960
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
+#define BIGINT_BITS 1024
+#define LIMB_BITS 64
+#define LIMB_BITS_OVERFLOW 128
+#include "bigint.h"
+#undef BIGINT_BITS
+#undef LIMB_BITS
+#undef LIMB_BITS_OVERFLOW
+
 void print_bytes384(uint8_t* bytes)
 {
     std::cout << std::hex;
@@ -1337,8 +1417,8 @@ bool load_evm384_input_offsets(bool is_montmul, execution_state &state, uint64_t
     const auto y_offset = *reinterpret_cast<const uint32_t*>(&params[4]);
     const auto field_params_offset = *reinterpret_cast<const uint32_t*>(&params[0]);
 
-    // num_limbs must be in 2..6 (for now)
-    if (nl < 2 or nl > 6) {
+    // num_limbs must be in 2..16 (for now)
+    if (nl < 2 or nl > 16) {
         return false;
     }
 
@@ -1391,6 +1471,36 @@ void addmod384(uint64_t *out, uint64_t *x, uint64_t *y, uint64_t *m, size_t num_
             break;
         case 6:
             addmod384_64bitlimbs(out, x, y, m);
+            break;
+        case 7:
+            addmod448_64bitlimbs(out, x, y, m);
+            break;
+        case 8:
+            addmod512_64bitlimbs(out, x, y, m);
+            break;
+        case 9:
+            addmod576_64bitlimbs(out, x, y, m);
+            break;
+        case 10:
+            addmod640_64bitlimbs(out, x, y, m);
+            break;
+        case 11:
+            addmod704_64bitlimbs(out, x, y, m);
+            break;
+        case 12:
+            addmod768_64bitlimbs(out, x, y, m);
+            break;
+        case 13:
+            addmod832_64bitlimbs(out, x, y, m);
+            break;
+        case 14:
+            addmod896_64bitlimbs(out, x, y, m);
+            break;
+        case 15:
+            addmod960_64bitlimbs(out, x, y, m);
+            break;
+        case 16:
+            addmod1024_64bitlimbs(out, x, y, m);
             break;
     }
 }
