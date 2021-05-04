@@ -8,6 +8,9 @@
 #include <evmc/instructions.h>
 #include <evmone/instruction_traits.hpp>
 
+#include <iostream>
+#include <fstream>
+
 using namespace benchmark;
 
 namespace evmone::test
@@ -35,6 +38,13 @@ enum class InstructionCategory : char
     swap = 's',    ///< SWAP instruction.
     other = 'X',   ///< Not any of the categories above.
 };
+
+void dump_to_file(std::string file_name, std::string contents) {
+	std::cout << file_name << std::endl;
+	std::ofstream out(file_name);
+	out << contents;
+	out.close();
+}
 
 constexpr InstructionCategory get_instruction_category(evmc_opcode opcode) noexcept
 {
@@ -71,7 +81,7 @@ struct CodeParams
 
 std::string to_string(const CodeParams& params)
 {
-    return std::string{instr::traits[params.opcode].name} + '/' +
+    return std::string{instr::traits[params.opcode].name} + '-' +
            static_cast<char>(get_instruction_category(params.opcode)) +
            std::to_string(static_cast<int>(params.mode));
 }
@@ -265,6 +275,9 @@ void register_synthetic_benchmarks()
 
     for (const auto params : params_list)
     {
+	std::string code = evmc::hex(generate_code(params));
+	dump_to_file(to_string(params), code);
+
         for (auto& [vm_name, vm] : registered_vms)
         {
             RegisterBenchmark(

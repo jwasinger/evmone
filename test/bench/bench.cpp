@@ -161,6 +161,8 @@ void register_benchmarks(const std::vector<BenchmarkCase>& benchmark_cases)
 {
     for (const auto& b : benchmark_cases)
     {
+	std::cout << b.name << std::endl;
+
         if (registered_vms.count("advanced"))
         {
             RegisterBenchmark(("advanced/analyse/" + b.name).c_str(), [&b](State& state) {
@@ -188,6 +190,8 @@ void register_benchmarks(const std::vector<BenchmarkCase>& benchmark_cases)
             }
         }
     }
+
+    std::cout << "register benchmarks done...\n";
 }
 
 
