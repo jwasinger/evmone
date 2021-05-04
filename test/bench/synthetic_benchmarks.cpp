@@ -276,7 +276,7 @@ void register_synthetic_benchmarks()
     for (const auto params : params_list)
     {
 	std::string code = evmc::hex(generate_code(params));
-	dump_to_file(to_string(params), code);
+	dump_to_file("synth-benchmarks/" + to_string(params), code);
 
         for (auto& [vm_name, vm] : registered_vms)
         {
