@@ -27,6 +27,7 @@ if(NOT APPLE)
 endif()
 
 target_compile_definitions(evmone-bench PRIVATE HAVE_STD_FILESYSTEM=${HAVE_STD_FILESYSTEM})
+set(CMAKE_CXX_FLAGS_RELEASE "-DBENCHMARK_OUT_FORMAT=json")
 
 if(NOT HAVE_STD_FILESYSTEM)
     file(
@@ -40,6 +41,7 @@ elseif(UNIX AND NOT APPLE)
     target_link_libraries(evmone-bench PRIVATE stdc++fs)
 endif()
 
+# set(CMAKE_CXX_FLAGS "-DBENCHMARK_FORMAT=console")
 
 # Tests
 

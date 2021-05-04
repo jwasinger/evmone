@@ -273,9 +273,15 @@ void register_synthetic_benchmarks()
             [&vm = vm](State& state) { execute(state, vm, generate_loop_v2({})); });
     }
 
+    std::string code = evmc::hex(generate_loop_v1({}));
+    dump_to_file("synth-benchmarks/loop_v1", code);
+
+    code = evmc::hex(generate_loop_v2({}));
+    dump_to_file("synth-benchmarks/loop_v2", code);
+
     for (const auto params : params_list)
     {
-	std::string code = evmc::hex(generate_code(params));
+	code = evmc::hex(generate_code(params));
 	dump_to_file("synth-benchmarks/" + to_string(params), code);
 
         for (auto& [vm_name, vm] : registered_vms)
