@@ -2,6 +2,7 @@
 
 rm -f evmone_bench_output.log
 rm -f geth_bench_output.log
+rm -f synth_bench.csv
 
 rm -rf synthetic_benchmarks
 mkdir synthetic_benchmarks
@@ -11,3 +12,4 @@ BENCH_DUMP=1 ../build/bin/evmone-bench --benchmark_format=json > ../evmone_bench
 cd ..
 
 ./bench_geth.sh > geth_bench_output.log 2>&1
+python3 gen_csv.py > synth_bench.csv
