@@ -9,6 +9,7 @@
 #include <evmone/instruction_traits.hpp>
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 
 using namespace benchmark;
@@ -286,7 +287,11 @@ void register_synthetic_benchmarks()
             std::replace(filename.begin(), filename.end(), '/', '_');
             std::ofstream f{filename};
             const auto code = generate_code(params);
-            std::copy(code.begin(), code.end(), std::ostreambuf_iterator(f));
+            //std::copy(code.begin(), code.end(), std::ostreambuf_iterator(f));
+
+            for (size_t i = 0; i < code.size(); i++) {
+                    f << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(code[i]);
+            }
         }
     }
 }
