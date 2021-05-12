@@ -594,6 +594,22 @@ inline evmc_status_code mstore8(ExecutionState& state) noexcept
     return EVMC_SUCCESS;
 }
 
+inline evmc_status_code mcopy(ExecutionState& state) noexcept
+{
+    const auto length = static_cast<size_t>(state.stack.pop());
+    const auto dst = static_cast<size_t>(state.stack.pop());
+    const auto src = static_cast<size_t>(state.stack.pop());
+
+    const auto max_offset = dst > src ? dst : src;
+
+    if (!check_memory(state, max_offset, length))
+        return EVMC_OUT_OF_GAS;
+
+    memcopy(&state.memory[dst], &state.memory[src], length);
+
+    return EVMC_SUCCESS;
+}
+
 inline evmc_status_code sload(ExecutionState& state) noexcept
 {
     auto& x = state.stack.top();

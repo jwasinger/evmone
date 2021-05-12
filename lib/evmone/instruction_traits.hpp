@@ -107,6 +107,7 @@ constexpr inline std::array<Traits, 256> traits = []() noexcept {
     table[OP_MSIZE] = {"MSIZE", 0, 1};
     table[OP_GAS] = {"GAS", 0, 1};
     table[OP_JUMPDEST] = {"JUMPDEST", 0, 0};
+    table[OP_MCOPY] = {"MCOPY", 3, -3};
 
     table[OP_PUSH1] = {"PUSH1", 0, 1};
     table[OP_PUSH2] = {"PUSH2", 0, 1};

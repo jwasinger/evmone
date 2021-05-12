@@ -421,6 +421,8 @@ evmc_result execute(const VM& /*vm*/, ExecutionState& state, const CodeAnalysis&
             break;
         case OP_JUMPDEST:
             break;
+        case OP_MSTORE:
+            break;
 
         case OP_PUSH1:
             pc = load_push<1>(state, pc + 1, code_end);
