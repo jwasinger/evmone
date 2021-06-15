@@ -49,9 +49,9 @@ evmc_status_code call(ExecutionState& state) noexcept
 
     auto cost = has_value ? 9000 : 0;
 
-    if constexpr (Kind == EVMC_CALL)
+    if constexpr (Kind == EVMC_CALL || Kind == EVMC_CALLCODE)
     {
-        if (has_value && state.msg->flags & EVMC_STATIC)
+        if (Kind != EVMC_CALLCODE && has_value && state.msg->flags & EVMC_STATIC)
             return EVMC_STATIC_MODE_VIOLATION;
 
         if ((has_value || state.rev < EVMC_SPURIOUS_DRAGON) && !state.host.account_exists(dst))
